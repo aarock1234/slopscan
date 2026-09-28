@@ -1,4 +1,4 @@
-# slopbot
+# slopscan
 
 Scores a git diff for slop: code that is hacky, non-idiomatic, or hard to change later, whoever wrote it.
 TypeScript and Go.
@@ -62,12 +62,12 @@ Three axes, weighted into one score:
 Points per finding by severity (1 / 3 / 8 / 20), damped geometrically within one rule so a hundred `any` casts
 score about twice one. Points per hundred changed lines feed `100 * (1 - e^(-density / 12))` per axis, and the
 axes combine `0.25 idiom + 0.40 hacky + 0.35 futureproof`. Grades A through F, exit code 1 above the fail
-threshold. Every constant lives in `.slopbot.yml`.
+threshold. Every constant lives in `.slopscan.yml`.
 
 ## GitHub Action
 
 ```yaml
-name: slopbot
+name: slopscan
 on:
     pull_request:
 
@@ -82,7 +82,7 @@ jobs:
             - uses: actions/checkout@v5
               with:
                   fetch-depth: 0
-            - uses: aarock1234/slopbot@v1
+            - uses: slopscan/slopscan@v1
               with:
                   openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
@@ -92,7 +92,7 @@ the pull request up to date, and fails the check when the score is over `failThr
 syntax rules only. Inputs: `base`, `judge`, `openrouter-api-key`, `openai-api-key`, `comment`, `fail-on-threshold`,
 `version`. Outputs: `score`, `grade`.
 
-To run it on demand, comment `@slopbot` or `/slopbot` on a pull request. That needs an `issue_comment` trigger next to
+To run it on demand, comment `@slopscan` or `/slopscan` on a pull request. That needs an `issue_comment` trigger next to
 `pull_request` and a guard so only people with write access can start a run that uses the repository's secrets:
 
 ```yaml
@@ -106,14 +106,14 @@ jobs:
         if: >-
             github.event_name == 'pull_request' ||
             (github.event.issue.pull_request &&
-             (contains(github.event.comment.body, '@slopbot') || contains(github.event.comment.body, '/slopbot')) &&
+             (contains(github.event.comment.body, '@slopscan') || contains(github.event.comment.body, '/slopscan')) &&
              contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
 ```
 
 The Action reacts to the comment with eyes, checks out that pull request's head, and posts the report as usual.
-`@slopbot` also notifies whoever owns that GitHub handle; `/slopbot` does not.
+`@slopscan` also notifies whoever owns that GitHub handle; `/slopscan` does not.
 
-Judge results are cached by content under `.slopbot-cache`, so re-running the same commit costs nothing.
+Judge results are cached by content under `.slopscan-cache`, so re-running the same commit costs nothing.
 
 ## What leaves your machine
 

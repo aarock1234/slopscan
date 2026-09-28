@@ -18,7 +18,7 @@ async function commitFile(path: string, content: string): Promise<void> {
 }
 
 beforeAll(async () => {
-	repo = await mkdtemp(join(tmpdir(), 'slopbot-confirm-'));
+	repo = await mkdtemp(join(tmpdir(), 'slopscan-confirm-'));
 	execFileSync('git', ['init', '-q'], { cwd: repo });
 	await commitFile(
 		'a.ts',

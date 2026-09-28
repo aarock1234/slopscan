@@ -11,15 +11,15 @@ import { resolveModel } from './model.js';
 import { Format, formatValues, isFormat, renderReport } from './report.js';
 import { loadRules } from './rule.js';
 import { scan } from './scan.js';
-import { SlopbotError } from './shared/errors.js';
+import { SlopscanError } from './shared/errors.js';
 import { logger } from './shared/log.js';
 import { RULES_DIR } from './shared/paths.js';
 
-const HELP = `slopbot - scores a git diff for slop
+const HELP = `slopscan - scores a git diff for slop
 
 usage:
-  slopbot scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>] [--no-judge] [--config <path>]
-  slopbot rules
+  slopscan scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>] [--no-judge] [--config <path>]
+  slopscan rules
 
 options:
   --base <ref>       ref to diff against (default: main)
@@ -27,7 +27,7 @@ options:
   --baseline <ref>   also score baseline..base and show the delta
   --format <fmt>     ${formatValues.join(', ')} (default: ${Format.TERMINAL})
   --no-judge         skip the LLM judge; syntax rules only, no API key needed
-  --config <path>    path to .slopbot.yml (default: ./.slopbot.yml)
+  --config <path>    path to .slopscan.yml (default: ./.slopscan.yml)
   --rules <dir>      rule directory (default: the bundled rules)
   --json-out <path>  also write the full report as json to this file
   -h, --help         show this help
@@ -35,7 +35,7 @@ options:
 exit codes: 0 under the fail threshold, 1 over it, 2 on error
 `;
 
-const CACHE_DIR = '.slopbot-cache';
+const CACHE_DIR = '.slopscan-cache';
 
 const ExitCode = {
 	OK: 0,
@@ -144,10 +144,10 @@ main(process.argv.slice(2))
 	})
 	.catch((error: unknown) => {
 		// our own errors carry a readable message; anything else is a bug and deserves the stack
-		if (error instanceof SlopbotError) {
+		if (error instanceof SlopscanError) {
 			process.stderr.write(`error: ${error.message}\n`);
 		} else {
-			logger.error({ err: error }, 'slopbot failed');
+			logger.error({ err: error }, 'slopscan failed');
 		}
 
 		process.exitCode = ExitCode.ERROR;

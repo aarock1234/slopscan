@@ -53,7 +53,7 @@ async function main(): Promise<void> {
 	const judge = createJudge({
 		config: { ...config.judge, minChangedLines: 1 },
 		model: resolveModel(config.judge.model),
-		cacheDir: join(cwd, '.slopbot-cache', 'eval'),
+		cacheDir: join(cwd, '.slopscan-cache', 'eval'),
 	});
 
 	const results: RuleResult[] = [];

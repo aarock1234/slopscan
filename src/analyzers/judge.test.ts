@@ -93,7 +93,7 @@ const GOOD_OUTPUT: JudgeOutput = {
 let cacheDir: string;
 
 beforeEach(async () => {
-	cacheDir = await mkdtemp(join(tmpdir(), 'slopbot-judge-'));
+	cacheDir = await mkdtemp(join(tmpdir(), 'slopscan-judge-'));
 });
 
 afterEach(async () => {

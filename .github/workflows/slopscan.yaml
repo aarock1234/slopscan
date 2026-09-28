@@ -1,4 +1,4 @@
-name: slopbot
+name: slopscan
 
 on:
     pull_request:
@@ -15,7 +15,7 @@ jobs:
         if: >-
             github.event_name == 'pull_request' ||
             (github.event.issue.pull_request &&
-             (contains(github.event.comment.body, '@slopbot') || contains(github.event.comment.body, '/slopbot')) &&
+             (contains(github.event.comment.body, '@slopscan') || contains(github.event.comment.body, '/slopscan')) &&
              contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
         runs-on: ubuntu-latest
         steps:

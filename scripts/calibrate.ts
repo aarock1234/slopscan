@@ -56,7 +56,7 @@ async function main(): Promise<void> {
 			? createJudge({
 					config: config.judge,
 					model: resolveModel(config.judge.model),
-					cacheDir: join(PACKAGE_ROOT, '.slopbot-cache', 'calibrate'),
+					cacheDir: join(PACKAGE_ROOT, '.slopscan-cache', 'calibrate'),
 				})
 			: undefined;
 

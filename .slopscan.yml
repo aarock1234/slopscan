@@ -1,4 +1,4 @@
-# slopbot scans itself. every key is optional; these are the defaults, spelled out as documentation.
+# slopscan scans itself. every key is optional; these are the defaults, spelled out as documentation.
 
 # added to the built-in ignore list (node_modules, dist, vendor, generated files, lockfiles)
 ignore: []

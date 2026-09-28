@@ -22,7 +22,7 @@ function git(...args: string[]): void {
 }
 
 beforeAll(async () => {
-	repo = await mkdtemp(join(tmpdir(), 'slopbot-scan-'));
+	repo = await mkdtemp(join(tmpdir(), 'slopscan-scan-'));
 	git('init', '-q', '-b', 'main');
 	await cp(join(PLANTED, 'before'), repo, { recursive: true });
 	git('add', '-A');

@@ -1,5 +1,5 @@
 {
-	"name": "@aarock1234/slopbot",
+	"name": "slopscan",
 	"version": "0.1.0",
 	"description": "scores a git diff for slop: hacky, non-idiomatic, non-future-proof code",
 	"keywords": [
@@ -14,17 +14,17 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/aarock1234/slopbot.git"
+		"url": "git+https://github.com/slopscan/slopscan.git"
 	},
-	"homepage": "https://github.com/aarock1234/slopbot#readme",
-	"bugs": "https://github.com/aarock1234/slopbot/issues",
+	"homepage": "https://github.com/slopscan/slopscan#readme",
+	"bugs": "https://github.com/slopscan/slopscan/issues",
 	"type": "module",
 	"engines": {
 		"node": ">=24"
 	},
 	"packageManager": "pnpm@12.4.1",
 	"bin": {
-		"slopbot": "dist/cli.js"
+		"slopscan": "dist/cli.js"
 	},
 	"files": [
 		"dist",

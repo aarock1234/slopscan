@@ -11,8 +11,8 @@ coverage/
 .env.*
 !.env.example
 
-# slopbot
-.slopbot-cache/
+# slopscan
+.slopscan-cache/
 
 # os
 .DS_Store

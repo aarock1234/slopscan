@@ -1,7 +1,7 @@
 # ranges in local repositories with the grade a careful reviewer would give them. run with
 #   pnpm script scripts/calibrate.ts
 # paths are relative to this project. expectations are proposals from a first read; correct them
-# freely, then tune the constants in .slopbot.yml until the table is all hits.
+# freely, then tune the constants in .slopscan.yml until the table is all hits.
 
 ranges:
     - name: betty recent web work

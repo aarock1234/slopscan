@@ -1,6 +1,6 @@
-name: slopbot
+name: slopscan
 description: Scores a pull request for slop - hacky, non-idiomatic, non-future-proof TypeScript and Go - and posts the report.
-author: aarock1234
+author: slopscan
 
 branding:
     icon: alert-octagon
@@ -23,7 +23,7 @@ inputs:
         description: Post or update one sticky comment on the pull request.
         default: 'true'
     fail-on-threshold:
-        description: Fail the check when the score is above failThreshold in .slopbot.yml.
+        description: Fail the check when the score is above failThreshold in .slopscan.yml.
         default: 'true'
     version:
         description: Version of the npm package to run.
@@ -49,7 +49,7 @@ runs:
           run: |
               case "$ASSOCIATION" in
                 OWNER|MEMBER|COLLABORATOR) ;;
-                *) echo "refusing @slopbot from $ASSOCIATION: write access required" >&2; exit 1 ;;
+                *) echo "refusing @slopscan from $ASSOCIATION: write access required" >&2; exit 1 ;;
               esac
 
         - name: Acknowledge the request
@@ -79,8 +79,8 @@ runs:
                 fi
                 # a comment run starts on the default branch; move to the pull request's head
                 if [ "${{ github.event_name }}" = "issue_comment" ]; then
-                  git fetch --no-tags origin "pull/$NUMBER/head:slopbot-head"
-                  git checkout -q slopbot-head
+                  git fetch --no-tags origin "pull/$NUMBER/head:slopscan-head"
+                  git checkout -q slopscan-head
                 fi
               fi
 
@@ -102,9 +102,9 @@ runs:
           if: inputs.judge == 'true'
           uses: actions/cache@v4
           with:
-              path: .slopbot-cache
-              key: slopbot-${{ github.repository }}-${{ steps.pr.outputs.head }}
-              restore-keys: slopbot-${{ github.repository }}-
+              path: .slopscan-cache
+              key: slopscan-${{ github.repository }}-${{ steps.pr.outputs.head }}
+              restore-keys: slopscan-${{ github.repository }}-
 
         - name: Scan
           id: scan
@@ -123,27 +123,27 @@ runs:
               fi
 
               set +e
-              npx --yes "@aarock1234/slopbot@${{ inputs.version }}" scan \
+              npx --yes "slopscan@${{ inputs.version }}" scan \
                 --base "origin/$BASE" --head HEAD \
-                --format markdown --json-out slopbot-report.json $judge_flag > slopbot-report.md
+                --format markdown --json-out slopscan-report.json $judge_flag > slopscan-report.md
               status=$?
               set -e
 
               if [ "$status" -eq 2 ]; then
-                echo "slopbot failed to run" >&2
+                echo "slopscan failed to run" >&2
                 exit 2
               fi
 
-              cat slopbot-report.md >> "$GITHUB_STEP_SUMMARY"
-              echo "score=$(node -p "JSON.parse(require('fs').readFileSync('slopbot-report.json','utf8')).overall")" >> "$GITHUB_OUTPUT"
-              echo "grade=$(node -p "JSON.parse(require('fs').readFileSync('slopbot-report.json','utf8')).grade")" >> "$GITHUB_OUTPUT"
+              cat slopscan-report.md >> "$GITHUB_STEP_SUMMARY"
+              echo "score=$(node -p "JSON.parse(require('fs').readFileSync('slopscan-report.json','utf8')).overall")" >> "$GITHUB_OUTPUT"
+              echo "grade=$(node -p "JSON.parse(require('fs').readFileSync('slopscan-report.json','utf8')).grade")" >> "$GITHUB_OUTPUT"
               echo "status=$status" >> "$GITHUB_OUTPUT"
 
         - name: Upload report
           uses: actions/upload-artifact@v4
           with:
-              name: slopbot-report
-              path: slopbot-report.json
+              name: slopscan-report
+              path: slopscan-report.json
 
         - name: Comment on the pull request
           if: inputs.comment == 'true' && steps.pr.outputs.number != ''
@@ -153,16 +153,16 @@ runs:
               PR: ${{ steps.pr.outputs.number }}
           run: |
               set -euo pipefail
-              marker="<!-- slopbot -->"
-              { echo "$marker"; cat slopbot-report.md; } > slopbot-comment.md
+              marker="<!-- slopscan -->"
+              { echo "$marker"; cat slopscan-report.md; } > slopscan-comment.md
 
               existing=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --paginate \
                 --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")
 
               if [ -n "$existing" ]; then
-                gh api --method PATCH "repos/${{ github.repository }}/issues/comments/$existing" -F body=@slopbot-comment.md > /dev/null
+                gh api --method PATCH "repos/${{ github.repository }}/issues/comments/$existing" -F body=@slopscan-comment.md > /dev/null
               else
-                gh pr comment "$PR" --repo "${{ github.repository }}" --body-file slopbot-comment.md
+                gh pr comment "$PR" --repo "${{ github.repository }}" --body-file slopscan-comment.md
               fi
 
         - name: Enforce threshold

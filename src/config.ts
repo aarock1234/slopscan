@@ -8,7 +8,7 @@ import { judgeConfigSchema } from './analyzers/judge.js';
 import { scoringSchema } from './score.js';
 import { ConfigError } from './shared/errors.js';
 
-const CONFIG_FILE = '.slopbot.yml';
+const CONFIG_FILE = '.slopscan.yml';
 
 // generated and vendored code is never the author's slop
 const DEFAULT_IGNORE = [
@@ -40,7 +40,7 @@ export const configSchema = z
 
 export type Config = z.infer<typeof configSchema>;
 
-// reads .slopbot.yml from cwd, or the given path. a missing default file means defaults; a missing
+// reads .slopscan.yml from cwd, or the given path. a missing default file means defaults; a missing
 // explicit file is a mistake.
 export async function loadConfig(cwd: string, explicitPath?: string): Promise<Config> {
 	const path = resolve(cwd, explicitPath ?? CONFIG_FILE);

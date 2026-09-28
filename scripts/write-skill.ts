@@ -37,7 +37,7 @@ async function main(): Promise<void> {
 	const content = [
 		'---',
 		'name: slop-rules',
-		'description: Coding rules for TypeScript and Go that slopbot enforces. Use when writing, editing, or reviewing .ts, .tsx, or .go code. Each rule links to its full explanation with good and bad examples.',
+		'description: Coding rules for TypeScript and Go that slopscan enforces. Use when writing, editing, or reviewing .ts, .tsx, or .go code. Each rule links to its full explanation with good and bad examples.',
 		'---',
 		'',
 		'# Slop rules',
