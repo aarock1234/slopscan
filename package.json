@@ -14,10 +14,10 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/slopscan/slopscan.git"
+		"url": "git+https://github.com/aarock1234/slopscan.git"
 	},
-	"homepage": "https://github.com/slopscan/slopscan#readme",
-	"bugs": "https://github.com/slopscan/slopscan/issues",
+	"homepage": "https://github.com/aarock1234/slopscan#readme",
+	"bugs": "https://github.com/aarock1234/slopscan/issues",
 	"type": "module",
 	"engines": {
 		"node": ">=24"

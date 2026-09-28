@@ -82,7 +82,7 @@ jobs:
             - uses: actions/checkout@v5
               with:
                   fetch-depth: 0
-            - uses: slopscan/slopscan@v1
+            - uses: aarock1234/slopscan@v1
               with:
                   openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
