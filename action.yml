@@ -129,8 +129,10 @@ runs:
               status=$?
               set -e
 
-              if [ "$status" -eq 2 ]; then
-                echo "slopscan failed to run" >&2
+              # exit 1 means over the threshold, but only when a report exists; anything else is a failed run
+              if [ "$status" -eq 2 ] || [ ! -s slopscan-report.json ]; then
+                echo "slopscan failed to run (exit $status)" >&2
+                cat slopscan-report.md >&2 || true
                 exit 2
               fi
 
