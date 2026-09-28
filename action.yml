@@ -123,7 +123,7 @@ runs:
               fi
 
               set +e
-              npx --yes "slopscan@${{ inputs.version }}" scan \
+              npx --yes "@aarock1234/slopscan@${{ inputs.version }}" scan \
                 --base "origin/$BASE" --head HEAD \
                 --format markdown --json-out slopscan-report.json $judge_flag > slopscan-report.md
               status=$?

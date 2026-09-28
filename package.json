@@ -1,5 +1,5 @@
 {
-	"name": "slopscan",
+	"name": "@aarock1234/slopscan",
 	"version": "0.1.0",
 	"description": "scores a git diff for slop: hacky, non-idiomatic, non-future-proof code",
 	"keywords": [
