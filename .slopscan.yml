@@ -35,10 +35,10 @@ scoring:
         minor: 3
         major: 8
         critical: 20
-    damping: 0.5
     densityScale: 12
     axisWeights:
         idiom: 0.25
         hacky: 0.4
         futureproof: 0.35
     minScoredLines: 50
+    maxScoredLines: 2000

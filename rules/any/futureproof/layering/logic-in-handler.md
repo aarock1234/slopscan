@@ -9,16 +9,16 @@ falsePositives:
   - 'a small script, example, or prototype with no service layer at all'
   - 'middleware, which operates on the request itself rather than on domain state'
 jev:
-  threshold: 0.5
+  threshold: 0.51
 ---
 
 ## Why
 
-Business rules written inside an HTTP handler can only be reached through HTTP, so they cannot be reused by a CLI, a queue consumer, or a scheduled job, and they can only be tested by spinning up requests. The handler grows with every rule until nobody can see the request handling for the logic. Keep the handler to parsing input, calling one service function, and mapping the result to a response; the rules live in the service where they can be called from anywhere.
+Business rules written inside an HTTP handler can only be reached through HTTP, so they cannot be reused by a CLI, a queue consumer, or a scheduled job, and they can only be tested by spinning up requests. The handler grows with every rule until nobody can see the request handling for the logic. Keep the handler to parsing input, calling one service function, and mapping the result to a response; the rules live in the service where they can be called from anywhere. Expensive work is the worst case: several model or network calls made inside the request, before a durable ID exists, are lost on a restart and give the caller nothing to poll, so the handler should mint the ID and start the workflow that does the work.
 
 ## Message
 
-business logic inside an http handler; move it to a service the handler calls
+business logic or expensive work inside an http handler; move it to a service or workflow the handler calls
 
 ## Bad
 

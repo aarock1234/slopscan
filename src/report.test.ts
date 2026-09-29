@@ -9,6 +9,7 @@ const axis = (score: number, findings: number) => ({ score, points: 0, density: 
 const REPORT: Report = {
 	overall: 39,
 	grade: Grade.C,
+	floor: 0,
 	axes: {
 		idiom: axis(14.5, 2),
 		hacky: axis(71.1, 7),
@@ -60,7 +61,7 @@ describe('renderReport', () => {
 	it('shows the delta against a baseline', () => {
 		const withBaseline: Report = {
 			...REPORT,
-			baseline: { overall: 45, grade: Grade.C, axes: REPORT.axes },
+			baseline: { overall: 45, grade: Grade.C, floor: 0, axes: REPORT.axes },
 		};
 		const text = renderReport(withBaseline, { format: Format.TERMINAL, color: false });
 

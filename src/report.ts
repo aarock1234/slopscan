@@ -72,6 +72,10 @@ function renderTerminal(report: Report, color: boolean): string {
 		dim(`${report.files} files, ${report.scoredLines} scored lines`),
 	];
 
+	if (report.floor > 0) {
+		lines.push(dim(floorLine(report)));
+	}
+
 	if (report.judge !== undefined) {
 		lines.push(dim(judgeLine(report.judge)));
 	}
@@ -108,6 +112,7 @@ function renderMarkdown(report: Report): string {
 	const lines = [
 		`## Slop score: ${report.overall} (${report.grade})${deltaSuffix(report)}`,
 		'',
+		...(report.floor > 0 ? [floorLine(report), ''] : []),
 		'| axis | score | findings |',
 		'| --- | ---: | ---: |',
 		...axisValues.map(
@@ -160,6 +165,13 @@ function judgeLine(judge: NonNullable<Report['judge']>): string {
 }
 
 // "39 (C)  was 45 (C), -6" when a baseline is present
+// the critical findings set a minimum the density could not go under; say so, or the axes look too low for the grade
+function floorLine(report: Report): string {
+	const criticals = report.findings.filter(finding => finding.severity === 'critical').length;
+
+	return `${criticals} critical ${criticals === 1 ? 'finding holds' : 'findings hold'} the score at ${report.floor} or above`;
+}
+
 function deltaSuffix(report: Report): string {
 	if (report.baseline === undefined) {
 		return '';

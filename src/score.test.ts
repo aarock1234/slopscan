@@ -66,25 +66,32 @@ const FINDINGS = [
 	finding('ts.idiom.default', 31),
 ];
 
+function repeated(ruleId: string, count: number): Finding[] {
+	return Array.from({ length: count }, (_, index) => finding(ruleId, index + 1));
+}
+
 describe('score', () => {
 	it('reproduces the worked example', () => {
 		const report = score(FINDINGS, [change(240)], RULES, scoring);
 
-		expect(report.axes.hacky.points).toBeCloseTo(35.75);
+		// six casts weigh sqrt(6) casts: 8 * 2.449 + 20 for the swallowed error
+		expect(report.axes.hacky.points).toBeCloseTo(39.6, 1);
 		expect(report.axes.futureproof.points).toBeCloseTo(6.8);
-		expect(report.axes.idiom.points).toBeCloseTo(4.5);
-		expect(report.axes.hacky.score).toBeCloseTo(71.1, 0);
-		expect(report.overall).toBe(39);
+		expect(report.axes.idiom.points).toBeCloseTo(4.24, 2);
+		expect(report.axes.hacky.score).toBeCloseTo(74.7, 0);
+		expect(report.overall).toBe(41);
 		expect(report.grade).toBe(Grade.C);
+		expect(report.floor).toBe(26);
 		expect(report.scoredLines).toBe(240);
 	});
 
-	it('scores the same findings lower in a larger diff', () => {
+	it('scores the same findings lower in a larger diff, down to the floor its critical finding sets', () => {
 		const small = score(FINDINGS, [change(240)], RULES, scoring);
 		const large = score(FINDINGS, [change(1000)], RULES, scoring);
 
 		expect(large.overall).toBeLessThan(small.overall);
-		expect(large.grade).toBe(Grade.B);
+		expect(large.overall).toBe(large.floor);
+		expect(large.grade).toBe(Grade.C);
 	});
 
 	it('floors the line count so tiny diffs are not catastrophic', () => {
@@ -94,16 +101,30 @@ describe('score', () => {
 		expect(tiny.overall).toBe(floored.overall);
 	});
 
-	it('damps repeated findings of one rule geometrically', () => {
-		const one = score([finding('ts.hacky.cast', 1)], [change(100)], RULES, scoring);
-		const hundred = score(
-			Array.from({ length: 100 }, (_, index) => finding('ts.hacky.cast', index + 1)),
-			[change(100)],
-			RULES,
-			scoring
-		);
+	it('caps the line count so a huge diff cannot dilute its findings', () => {
+		const findings = repeated('ts.hacky.cast', 200);
+		const capped = score(findings, [change(scoring.maxScoredLines)], RULES, scoring);
+		const huge = score(findings, [change(50_000)], RULES, scoring);
 
-		expect(hundred.axes.hacky.points).toBeCloseTo(2 * one.axes.hacky.points, 5);
+		expect(huge.overall).toBe(capped.overall);
+		expect(huge.grade).toBe(Grade.B);
+	});
+
+	it('damps repeated findings of one rule to the square root of their count', () => {
+		const one = score([finding('ts.hacky.cast', 1)], [change(100)], RULES, scoring);
+		const hundred = score(repeated('ts.hacky.cast', 100), [change(100)], RULES, scoring);
+
+		expect(hundred.axes.hacky.points).toBeCloseTo(10 * one.axes.hacky.points, 5);
+	});
+
+	it('lets critical findings set a grade floor whatever the size of the diff', () => {
+		const one = score([finding('ts.hacky.swallow', 1)], [change(100_000)], RULES, scoring);
+		const three = score(repeated('ts.hacky.swallow', 3), [change(100_000)], RULES, scoring);
+		const none = score(repeated('ts.hacky.cast', 3), [change(100_000)], RULES, scoring);
+
+		expect(one).toMatchObject({ overall: 26, grade: Grade.C, floor: 26 });
+		expect(three).toMatchObject({ overall: 71, grade: Grade.F, floor: 71 });
+		expect(none).toMatchObject({ grade: Grade.A, floor: 0 });
 	});
 
 	it('ranks findings by contribution, then severity, then location', () => {
@@ -114,7 +135,9 @@ describe('score', () => {
 			'ts.hacky.cast',
 			'ts.futureproof.bool',
 		]);
-		expect(report.findings.at(-1)).toMatchObject({ ruleId: 'ts.hacky.cast', points: 0.25 });
+		// the second default export adds 3 * (sqrt(2) - 1), less than the sixth cast's 8 * (sqrt(6) - sqrt(5))
+		expect(report.findings.at(-1)?.ruleId).toBe('ts.idiom.default');
+		expect(report.findings.at(-1)?.points).toBeCloseTo(1.243, 3);
 	});
 
 	it('returns a clean report for no findings', () => {
@@ -122,6 +145,7 @@ describe('score', () => {
 
 		expect(report.overall).toBe(0);
 		expect(report.grade).toBe(Grade.A);
+		expect(report.floor).toBe(0);
 		expect(report.findings).toEqual([]);
 	});
 

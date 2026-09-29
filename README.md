@@ -63,10 +63,12 @@ Three axes, weighted into one score:
 
 ## Scoring
 
-Points per finding by severity (1 / 3 / 8 / 20), damped geometrically within one rule so a hundred `any` casts
-score about twice one. Points per hundred changed lines feed `100 * (1 - e^(-density / 12))` per axis, and the
-axes combine `0.25 idiom + 0.40 hacky + 0.35 futureproof`. Grades A through F, exit code 1 above the fail
-threshold. Every constant lives in `.slopscan.yml`.
+Points per finding by severity (1 / 3 / 8 / 20), damped within one rule to the square root of the count, so a
+hundred `any` casts weigh ten. Points per hundred changed lines feed `100 * (1 - e^(-density / 12))` per axis,
+with the line count floored at 50 and capped at 2000 so neither a tiny diff nor a huge one distorts the density.
+The axes combine `0.25 idiom + 0.40 hacky + 0.35 futureproof`. Critical findings set a floor the size of the diff
+cannot dilute: one caps the grade at C, two at D, three or more is an F. Grades A through F, exit code 1 above
+the fail threshold. The constants live in `.slopscan.yml`.
 
 ## GitHub Action
 

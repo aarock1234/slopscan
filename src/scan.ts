@@ -87,6 +87,6 @@ function unverified(findings: readonly Finding[], floor: number): Verified {
 	return { kept, rejected };
 }
 
-function pickScore({ overall, grade, axes }: Scored): Report['baseline'] {
-	return { overall, grade, axes };
+function pickScore({ overall, grade, floor, axes }: Scored): Report['baseline'] {
+	return { overall, grade, floor, axes };
 }
