@@ -71,7 +71,7 @@ describe('extractUnits', () => {
 	it('cuts a TypeScript file into functions, module-level arrows, top-level types, and long module-level values', () => {
 		const units = extractUnits(Lang.TS, 'src/user.ts', TS_SOURCE, NO_COUNTS);
 
-		expect(units.map(unit => [unit.facts.name, unit.facts.exported, unit.facts.parameters])).toEqual([
+		expect(units.map(unit => [unit.facts.name, unit.facts.isExported, unit.facts.parameters])).toEqual([
 			['User', true, 0],
 			['Options', false, 0],
 			['isAdmin', true, 1],
@@ -94,7 +94,7 @@ describe('extractUnits', () => {
 		);
 
 		expect(load?.header).toBe('const load = async (id: string, options: Options): Promise<User> => {');
-		expect(load?.facts.returnsBoolean).toBe(false);
+		expect(load?.facts.isPredicate).toBe(false);
 		expect(load?.declarations).not.toContain(load?.header);
 		expect(load?.imports).toEqual(["import { z } from 'zod';"]);
 	});
@@ -102,14 +102,14 @@ describe('extractUnits', () => {
 	it('knows which units return a boolean', () => {
 		const units = extractUnits(Lang.TS, 'src/user.ts', TS_SOURCE, NO_COUNTS);
 
-		expect(units.filter(unit => unit.facts.returnsBoolean).map(unit => unit.facts.name)).toEqual(['isAdmin']);
+		expect(units.filter(unit => unit.facts.isPredicate).map(unit => unit.facts.name)).toEqual(['isAdmin']);
 	});
 
 	it('cuts a Go file into long value blocks, types, functions, and methods, counting parameters without the receiver', () => {
 		const units = extractUnits(Lang.GO, 'store/store.go', GO_SOURCE, NO_COUNTS);
 
 		expect(
-			units.map(unit => [unit.facts.name, unit.facts.exported, unit.facts.parameters, unit.facts.returnsBoolean])
+			units.map(unit => [unit.facts.name, unit.facts.isExported, unit.facts.parameters, unit.facts.isPredicate])
 		).toEqual([
 			['resolvedWords', false, 0, false],
 			['Store', true, 0, false],

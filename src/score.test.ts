@@ -17,6 +17,7 @@ function rule(id: string, axis: Rule['axis'], severity: Rule['severity']): Rule 
 		category: 'test',
 		severity,
 		ignore: [],
+		guide: [],
 		why: 'because',
 		message: id,
 		good: [],

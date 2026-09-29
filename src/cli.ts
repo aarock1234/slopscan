@@ -49,17 +49,39 @@ const Command = {
 
 const parseOptions = {
 	options: {
-		base: { type: 'string', default: 'main' },
-		head: { type: 'string', default: 'HEAD' },
+		base: {
+			type: 'string',
+			default: 'main',
+		},
+		head: {
+			type: 'string',
+			default: 'HEAD',
+		},
 		baseline: { type: 'string' },
-		format: { type: 'string', default: Format.TERMINAL },
+		format: {
+			type: 'string',
+			default: Format.TERMINAL,
+		},
 		judge: { type: 'boolean' },
-		jev: { type: 'boolean', default: true },
-		verify: { type: 'boolean', default: true },
+		jev: {
+			type: 'boolean',
+			default: true,
+		},
+		verify: {
+			type: 'boolean',
+			default: true,
+		},
 		config: { type: 'string' },
-		rules: { type: 'string', default: RULES_DIR },
+		rules: {
+			type: 'string',
+			default: RULES_DIR,
+		},
 		'json-out': { type: 'string' },
-		help: { type: 'boolean', short: 'h', default: false },
+		help: {
+			type: 'boolean',
+			short: 'h',
+			default: false,
+		},
 	},
 	allowPositionals: true,
 	allowNegative: true,
@@ -69,7 +91,10 @@ const parseOptions = {
 type Options = ReturnType<typeof parseArgs<typeof parseOptions>>['values'];
 
 async function main(argv: readonly string[]): Promise<ExitCode> {
-	const { values, positionals } = parseArgs({ ...parseOptions, args: [...argv] });
+	const { values, positionals } = parseArgs({
+		...parseOptions,
+		args: [...argv],
+	});
 	const command = positionals[0];
 
 	if (values.help || command === undefined) {
@@ -98,25 +123,46 @@ async function runScan(values: Options): Promise<ExitCode> {
 
 	const report = await scan({
 		repo,
-		range: { base: values.base, head: values.head },
+		range: {
+			base: values.base,
+			head: values.head,
+		},
 		config,
 		rules,
 		// the judge flag wins over the config; without either the expensive tier stays off
 		...buildTiers(repo, config, {
-			judge: values.judge ?? config.judge.enabled,
-			jev: values.jev,
-			verify: values.verify,
+			shouldJudge: values.judge ?? config.judge.enabled,
+			shouldRunJev: values.jev,
+			shouldVerify: values.verify,
 		}),
 		...(values.baseline !== undefined && { baseline: values.baseline }),
 	});
 
-	process.stdout.write(renderReport(report, { format: values.format, color: process.stdout.isTTY }));
+	process.stdout.write(
+		renderReport(report, {
+			format: values.format,
+			color: process.stdout.isTTY,
+		})
+	);
 
 	if (values['json-out'] !== undefined) {
-		await writeFile(values['json-out'], renderReport(report, { format: Format.JSON, color: false }));
+		await writeFile(
+			values['json-out'],
+			renderReport(report, {
+				format: Format.JSON,
+				color: false,
+			})
+		);
 	}
 
-	logger.debug({ files: report.files, findings: report.findings.length, overall: report.overall }, 'scan complete');
+	logger.debug(
+		{
+			files: report.files,
+			findings: report.findings.length,
+			overall: report.overall,
+		},
+		'scan complete'
+	);
 
 	return report.overall > config.failThreshold ? ExitCode.FAILED_THRESHOLD : ExitCode.OK;
 }

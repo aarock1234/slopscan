@@ -52,6 +52,7 @@ function judgeRule(id: string, predicate?: Confirm): Rule {
 		category: 'abstraction',
 		severity: 'minor',
 		ignore: [],
+		guide: [],
 		why: 'because',
 		message: id,
 		good: [],

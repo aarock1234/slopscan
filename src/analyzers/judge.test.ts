@@ -38,6 +38,7 @@ const judgeRule: Rule = {
 	category: 'comments',
 	severity: 'minor',
 	ignore: [],
+	guide: [],
 	why: 'a comment that repeats the code is noise.',
 	message: 'comment restates the code',
 	good: [{ lang: 'ts', source: '// why', expectLines: [] }],

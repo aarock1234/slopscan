@@ -26,6 +26,10 @@ const execFileAsync = promisify(execFile);
 
 const gradeValues = Object.values(Grade) as [Grade, ...Grade[]];
 
+// column widths of the result table
+const NAME_COLUMN = 34;
+const EXPECT_COLUMN = 4;
+
 const fixtureSchema = z.object({
 	name: z.string(),
 	repo: z.string(),
@@ -40,9 +44,18 @@ const fixturesSchema = z.object({ ranges: z.array(fixtureSchema) });
 
 const { values } = parseArgs({
 	options: {
-		fixtures: { type: 'string', default: join(PACKAGE_ROOT, 'fixtures', 'calibration.yml') },
-		judge: { type: 'boolean', default: false },
-		rules: { type: 'string', default: RULES_DIR },
+		fixtures: {
+			type: 'string',
+			default: join(PACKAGE_ROOT, 'fixtures', 'calibration.yml'),
+		},
+		judge: {
+			type: 'boolean',
+			default: false,
+		},
+		rules: {
+			type: 'string',
+			default: RULES_DIR,
+		},
 		only: { type: 'string' },
 	},
 	strict: true,
@@ -58,7 +71,7 @@ async function main(): Promise<void> {
 		const repo = resolve(PACKAGE_ROOT, range.repo);
 		const config = await loadConfig(repo);
 
-		if (!(await workingTreeIsAt(repo, range.head))) {
+		if (!(await isWorkingTreeAt(repo, range.head))) {
 			// confirm predicates and the verifier's tools read the working tree, so a different checkout skews them
 			process.stdout.write(
 				pc.yellow(
@@ -69,19 +82,26 @@ async function main(): Promise<void> {
 
 		const report = await scan({
 			repo,
-			range: { base: range.base, head: range.head },
+			range: {
+				base: range.base,
+				head: range.head,
+			},
 			config,
 			rules,
-			...buildTiers(repo, config, { judge: values.judge, jev: true, verify: true }),
+			...buildTiers(repo, config, {
+				shouldJudge: values.judge,
+				shouldRunJev: true,
+				shouldVerify: true,
+			}),
 		});
 
-		const hit = within(report.grade, range.expect);
-		misses += hit ? 0 : 1;
+		const isHit = isWithin(report.grade, range.expect);
+		misses += isHit ? 0 : 1;
 
 		const axes = `idiom ${Math.round(report.axes.idiom.score)} hacky ${Math.round(report.axes.hacky.score)} futureproof ${Math.round(report.axes.futureproof.score)}`;
 		const floor = report.floor > 0 ? `, floor ${report.floor}` : '';
 		process.stdout.write(
-			`${hit ? pc.green('hit ') : pc.red('miss')} ${range.name.padEnd(34)} got ${report.overall} (${report.grade})  expected ${range.expect.padEnd(4)} ${pc.dim(`${axes}${floor}; ${report.findings.length} findings over ${report.scoredLines} lines`)}\n`
+			`${isHit ? pc.green('hit ') : pc.red('miss')} ${range.name.padEnd(NAME_COLUMN)} got ${report.overall} (${report.grade})  expected ${range.expect.padEnd(EXPECT_COLUMN)} ${pc.dim(`${axes}${floor}; ${report.findings.length} findings over ${report.scoredLines} lines`)}\n`
 		);
 	}
 
@@ -89,7 +109,7 @@ async function main(): Promise<void> {
 	process.exitCode = misses === 0 ? 0 : 1;
 }
 
-async function workingTreeIsAt(repo: string, head: string): Promise<boolean> {
+async function isWorkingTreeAt(repo: string, head: string): Promise<boolean> {
 	const [current, wanted] = await Promise.all([revParse(repo, 'HEAD'), revParse(repo, head)]);
 
 	return current !== undefined && current === wanted;
@@ -97,7 +117,10 @@ async function workingTreeIsAt(repo: string, head: string): Promise<boolean> {
 
 async function revParse(repo: string, ref: string): Promise<string | undefined> {
 	try {
-		const { stdout } = await execFileAsync('git', ['rev-parse', ref], { cwd: repo, encoding: 'utf-8' });
+		const { stdout } = await execFileAsync('git', ['rev-parse', ref], {
+			cwd: repo,
+			encoding: 'utf-8',
+		});
 
 		return stdout.trim();
 	} catch {
@@ -105,7 +128,7 @@ async function revParse(repo: string, ref: string): Promise<string | undefined> 
 	}
 }
 
-function within(grade: Grade, expected: string): boolean {
+function isWithin(grade: Grade, expected: string): boolean {
 	const [low, high = low] = expected.split('-') as [Grade, Grade?];
 	const rank = (value: Grade) => gradeValues.indexOf(value);
 

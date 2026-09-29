@@ -15,6 +15,7 @@ import { Lang, detectLang } from './lang.js';
 import { Detect } from './rule.js';
 import type { JudgeRule, Rule } from './rule.js';
 import { mapConcurrent } from './shared/concurrency.js';
+import { loadPrompt } from './shared/prompts.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -43,8 +44,8 @@ export const verifySummarySchema = z.object({
 export type VerifySummary = z.infer<typeof verifySummarySchema>;
 
 export type Verified = {
-	kept: Finding[];
-	rejected: Finding[];
+	readonly kept: readonly Finding[];
+	readonly rejected: readonly Finding[];
 };
 
 export type Verifier = {
@@ -69,7 +70,7 @@ const VerdictKind = {
 } as const;
 
 const verdictSchema = z.object({
-	verdict: z.enum([VerdictKind.CONFIRMED, VerdictKind.REJECTED, VerdictKind.UNCERTAIN]),
+	verdict: z.enum(VerdictKind),
 	// one sentence a reviewer can check
 	reason: z.string().max(300),
 	// the offending line copied verbatim from the code, or null when not confirming
@@ -89,13 +90,8 @@ const MAX_FILE_LINES = 200;
 const MAX_REFERENCES = 30;
 const CONTEXT_BEFORE = 5;
 const CONTEXT_AFTER = 60;
-
-const SYSTEM = `You verify one candidate finding produced by a fast classifier that reads one function at a time.
-Decide whether the code really violates the rule as the rule describes it. You may read files and find references
-when the judgment depends on something outside the function, such as how many callers a symbol has, whether a
-schema lives in the same file, or what a type is. Be strict: confirm only when the violation is present as
-described and none of the rule's listed exceptions apply; reject when the code is legitimate; say uncertain only
-when the information you could reach does not settle it. Quote the offending line verbatim when confirming.`;
+const CONCURRENT_CHECKS = 4;
+const PROMPT_NAME = 'verify';
 
 // the LLM judge as a bounded agent over Jev's less confident findings: two tools, a step cap, one structured verdict.
 // confirmed findings keep their line but take the verifier's quote; rejected and uncertain ones are dropped.
@@ -119,11 +115,11 @@ export function createVerifier(options: VerifierOptions): Verifier {
 			rules.filter((rule): rule is JudgeRule => rule.detect === Detect.JUDGE).map(rule => [rule.id, rule])
 		);
 		const sources = new Map(changes.map(change => [change.path, change.source]));
-		const tracked = new Set(await trackedFiles(options.repo));
-		await mkdir(options.cacheDir, { recursive: true });
-
-		const kept: Finding[] = [];
-		const rejected: Finding[] = [];
+		const [trackedPaths] = await Promise.all([
+			trackedFiles(options.repo),
+			mkdir(options.cacheDir, { recursive: true }),
+		]);
+		const tracked = new Set(trackedPaths);
 
 		const results = await mapConcurrent(
 			findings,
@@ -137,13 +133,27 @@ export function createVerifier(options: VerifierOptions): Verifier {
 					rule === undefined ||
 					source === undefined
 				) {
-					return { finding, verdict: undefined };
+					return {
+						finding,
+						verdict: undefined,
+					};
 				}
 
-				return { finding, verdict: await check(finding, rule, source, tracked) };
+				return {
+					finding,
+					verdict: await check(finding, rule, source, tracked),
+				};
 			},
-			{ concurrency: 4 }
+			{ concurrency: CONCURRENT_CHECKS }
 		);
+
+		return partition(results);
+	}
+
+	// unchecked findings stay; confirmed ones take the verifier's quote and reason; the rest are rejected
+	function partition(results: readonly Checked[]): Verified {
+		const kept: Finding[] = [];
+		const rejected: Finding[] = [];
 
 		for (const { finding, verdict } of results) {
 			if (verdict === undefined) {
@@ -156,14 +166,24 @@ export function createVerifier(options: VerifierOptions): Verifier {
 
 			if (verdict.verdict === VerdictKind.CONFIRMED) {
 				summary.confirmed += 1;
-				kept.push({ ...finding, quote: verdict.quote ?? finding.quote, message: verdict.reason });
+				kept.push({
+					...finding,
+					quote: verdict.quote ?? finding.quote,
+					message: verdict.reason,
+				});
 			} else {
 				summary.rejected += 1;
-				rejected.push({ ...finding, message: verdict.reason });
+				rejected.push({
+					...finding,
+					message: verdict.reason,
+				});
 			}
 		}
 
-		return { kept, rejected };
+		return {
+			kept,
+			rejected,
+		};
 	}
 
 	async function check(
@@ -172,12 +192,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 		source: string,
 		tracked: ReadonlySet<string>
 	): Promise<Verdict> {
-		const key = createHash('sha256')
-			.update(
-				`${options.modelId}\n${finding.path}:${finding.line}\n${finding.ruleId}\n${rule.why}\n${finding.quote}`
-			)
-			.digest('hex');
-		const cachePath = join(options.cacheDir, `${key}.json`);
+		const cachePath = join(options.cacheDir, `${cacheKey(options.modelId, finding, rule)}.json`);
 		const cached = await readCached(cachePath);
 
 		if (cached !== undefined) {
@@ -188,30 +203,17 @@ export function createVerifier(options: VerifierOptions): Verifier {
 
 		const result = await generateText({
 			model: options.model,
-			system: SYSTEM,
+			system: loadPrompt(PROMPT_NAME),
 			prompt: renderCandidate(finding, rule, source),
-			tools: {
-				read_file: tool({
-					description: `read a range of a tracked file in the repository, at most ${MAX_FILE_LINES} lines per call`,
-					inputSchema: z.object({
-						path: z.string(),
-						startLine: z.number().int().positive().default(1),
-						endLine: z.number().int().positive().optional(),
-					}),
-					execute: ({ path, startLine, endLine }) =>
-						readRange(options.repo, tracked, path, startLine, endLine),
-				}),
-				find_references: tool({
-					description: `find lines across the repository that mention a symbol, at most ${MAX_REFERENCES} results`,
-					inputSchema: z.object({ symbol: z.string().min(1) }),
-					execute: ({ symbol }) => findReferences(options.repo, symbol),
-				}),
-			},
+			tools: repositoryTools(options.repo, tracked),
 			stopWhen: stepCountIs(options.config.maxSteps),
 			// the last step has no tools, so the model must answer instead of reading one more file
 			prepareStep: ({ stepNumber }) =>
 				stepNumber >= options.config.maxSteps - 1 ? { toolChoice: 'none' } : undefined,
-			output: Output.object({ schema: verdictSchema, name: 'verdict' }),
+			output: Output.object({
+				schema: verdictSchema,
+				name: 'verdict',
+			}),
 			temperature: 0,
 			maxRetries: 2,
 		});
@@ -229,7 +231,42 @@ export function createVerifier(options: VerifierOptions): Verifier {
 		return verdict;
 	}
 
-	return { verify, summary: () => ({ ...summary }) };
+	return {
+		verify,
+		summary: () => ({ ...summary }),
+	};
+}
+
+type Checked = {
+	finding: Finding;
+	verdict: Verdict | undefined;
+};
+
+// the same finding under the same rule text and model answers the same, so a run over an unchanged commit is free
+function cacheKey(modelId: string, finding: Finding, rule: JudgeRule): string {
+	return createHash('sha256')
+		.update(`${modelId}\n${finding.path}:${finding.line}\n${finding.ruleId}\n${rule.why}\n${finding.quote}`)
+		.digest('hex');
+}
+
+// what the verifier may do besides read the candidate: look at a tracked file, or grep a symbol
+function repositoryTools(repo: string, tracked: ReadonlySet<string>) {
+	return {
+		read_file: tool({
+			description: `read a range of a tracked file in the repository, at most ${MAX_FILE_LINES} lines per call`,
+			inputSchema: z.object({
+				path: z.string(),
+				startLine: z.number().int().positive().default(1),
+				endLine: z.number().int().positive().optional(),
+			}),
+			execute: ({ path, startLine, endLine }) => readRange(repo, tracked, path, startLine, endLine),
+		}),
+		find_references: tool({
+			description: `find lines across the repository that mention a symbol, at most ${MAX_REFERENCES} results`,
+			inputSchema: z.object({ symbol: z.string().min(1) }),
+			execute: ({ symbol }) => findReferences(repo, symbol),
+		}),
+	};
 }
 
 // the sdk throws when a run ends without the structured answer; that is an outcome here, not a crash
@@ -346,7 +383,10 @@ async function findReferences(repo: string, symbol: string): Promise<string> {
 }
 
 async function trackedFiles(repo: string): Promise<string[]> {
-	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf-8' });
+	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
+		cwd: repo,
+		encoding: 'utf-8',
+	});
 
 	return stdout.split('\0').filter(path => path.length > 0);
 }

@@ -61,10 +61,10 @@ const GRADE_COLOR: Readonly<Record<Grade, (text: string) => string>> = {
 	[Grade.F]: pc.red,
 };
 
-function renderTerminal(report: Report, color: boolean): string {
-	const paint = color ? GRADE_COLOR[report.grade] : identity;
-	const dim = color ? pc.dim : identity;
-	const bold = color ? pc.bold : identity;
+function renderTerminal(report: Report, hasColor: boolean): string {
+	const paint = hasColor ? GRADE_COLOR[report.grade] : identity;
+	const dim = hasColor ? pc.dim : identity;
+	const bold = hasColor ? pc.bold : identity;
 
 	const lines = [
 		`${bold('slop score')} ${paint(`${report.overall} (${report.grade})`)}${deltaSuffix(report)}`,
@@ -148,7 +148,6 @@ function renderMarkdown(report: Report): string {
 	return lines.join('\n');
 }
 
-// "jev jev-latest: 12 functions, 12 calls, 41k tokens; verifier confirmed 3 of 7"
 function jevLine(jev: NonNullable<Report['jev']>, verifier: Report['verifier']): string {
 	const verified =
 		verifier === undefined

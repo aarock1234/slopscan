@@ -66,9 +66,14 @@ const astByLangSchema = z
 	})
 	.strict();
 
+// a guide id is `<lang>.<section>` as the style skills' rules.json spells it, such as ts.one-definition
+const GUIDE_ID = /^(ts|go)\.[a-z0-9-]+$/;
+
 const commonFrontmatter = {
 	severity: z.enum(severityValues),
 	ignore: z.array(z.string()).default([]),
+	// the style guide sections this rule enforces; the guide's prose is the authority the rule answers to
+	guide: z.array(z.string().regex(GUIDE_ID)).default([]),
 };
 
 const frontmatterSchema = z.discriminatedUnion('detect', [
@@ -109,6 +114,7 @@ type RuleBase = {
 	category: string;
 	severity: Severity;
 	ignore: readonly string[];
+	guide: readonly string[];
 	why: string;
 	message: string;
 	good: readonly Example[];
@@ -176,6 +182,7 @@ export function parseRule(rulesDir: string, path: string, content: string): Rule
 		...identity,
 		severity: frontmatter.data.severity,
 		ignore: frontmatter.data.ignore,
+		guide: frontmatter.data.guide,
 		why,
 		message,
 		good,

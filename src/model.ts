@@ -45,6 +45,10 @@ export function resolveModel(spec: string): LanguageModel {
 			return createOpenAI({ apiKey })(modelId);
 		case Provider.OPENROUTER:
 			return createOpenRouter({ apiKey })(modelId);
+		default: {
+			const exhaustive: never = provider;
+			throw new Error(`unhandled provider: ${String(exhaustive)}`);
+		}
 	}
 }
 
@@ -57,7 +61,10 @@ function parseSpec(spec: string): Spec {
 		throw new ConfigError(`a model is "<provider>/<model>" with provider one of ${providerValues.join(', ')}`);
 	}
 
-	return { provider, modelId };
+	return {
+		provider,
+		modelId,
+	};
 }
 
 function keyOf(provider: Provider): string | undefined {
@@ -66,6 +73,10 @@ function keyOf(provider: Provider): string | undefined {
 			return env.OPENAI_API_KEY;
 		case Provider.OPENROUTER:
 			return env.OPENROUTER_API_KEY;
+		default: {
+			const exhaustive: never = provider;
+			throw new Error(`unhandled provider: ${String(exhaustive)}`);
+		}
 	}
 }
 

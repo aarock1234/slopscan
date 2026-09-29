@@ -60,14 +60,16 @@ function renderAxis(axis: keyof typeof AXIS_TITLES, rules: readonly Rule[]): str
 			const path = relative(PACKAGE_ROOT, rule.path).replaceAll('\\', '/');
 			const how = rule.detect === Detect.AST ? 'syntax' : 'judgment';
 
-			return `| [${rule.id}](${path}) | ${rule.lang} | ${rule.severity} | ${how} | ${rule.message} |`;
+			const guide = rule.guide.length > 0 ? rule.guide.map(id => `\`${id}\``).join(' ') : '';
+
+			return `| [${rule.id}](${path}) | ${rule.lang} | ${rule.severity} | ${how} | ${guide} | ${rule.message} |`;
 		});
 
 	return [
 		`## ${AXIS_TITLES[axis]}`,
 		'',
-		'| rule | lang | severity | check | message |',
-		'| --- | --- | --- | --- | --- |',
+		'| rule | lang | severity | check | guide | message |',
+		'| --- | --- | --- | --- | --- | --- |',
 		...rows,
 		'',
 	].join('\n');

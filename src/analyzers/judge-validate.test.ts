@@ -30,6 +30,7 @@ const rule: JudgeRule = {
 	category: 'comments',
 	severity: 'minor',
 	ignore: [],
+	guide: [],
 	why: 'because',
 	message: 'comment restates the code',
 	good: [],

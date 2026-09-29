@@ -30,11 +30,20 @@ const execFileAsync = promisify(execFile);
 const { values } = parseArgs({
 	options: {
 		out: { type: 'string' },
-		repo: { type: 'string', default: PACKAGE_ROOT },
-		lang: { type: 'string', default: Lang.TS },
+		repo: {
+			type: 'string',
+			default: PACKAGE_ROOT,
+		},
+		lang: {
+			type: 'string',
+			default: Lang.TS,
+		},
 		rule: { type: 'string' },
 		threshold: { type: 'string' },
-		'include-tests': { type: 'boolean', default: false },
+		'include-tests': {
+			type: 'boolean',
+			default: false,
+		},
 	},
 	strict: true,
 });
@@ -51,7 +60,12 @@ export type Finding = {
 	confidence: number;
 };
 
-const TEST_FILE = { [Lang.TS]: /\.test\.tsx?$/, [Lang.GO]: /_test\.go$/ } as const;
+const CONCURRENT_FILES = 2;
+
+const TEST_FILE = {
+	[Lang.TS]: /\.test\.tsx?$/,
+	[Lang.GO]: /_test\.go$/,
+} as const;
 
 async function main(): Promise<void> {
 	if (values.out === undefined) {
@@ -73,7 +87,15 @@ async function main(): Promise<void> {
 	);
 	const units = await collectUnits(lang);
 
-	logger.info({ repo, lang, units: units.length, rules: rules.length }, 'scanning');
+	logger.info(
+		{
+			repo,
+			lang,
+			units: units.length,
+			rules: rules.length,
+		},
+		'scanning'
+	);
 
 	// rules ignore paths, so each file's units are judged with the rules that apply to that file
 	const byPath = Map.groupBy(units, unit => unit.path);
@@ -81,14 +103,22 @@ async function main(): Promise<void> {
 	let calls = 0;
 	let inputTokens = 0;
 
-	for (const [path, fileUnits] of byPath) {
-		const applicable = rules.filter(rule => !isIgnored(path, rule.ignore));
+	// files are independent, so a few run at once; judge bounds the calls within each
+	const perFile = await mapConcurrent(
+		[...byPath],
+		async ([path, fileUnits]) => {
+			const applicable = rules.filter(rule => !isIgnored(path, rule.ignore));
 
-		if (applicable.length === 0) {
+			return applicable.length === 0 ? undefined : judge(client, lang, fileUnits, applicable);
+		},
+		{ concurrency: CONCURRENT_FILES }
+	);
+
+	for (const judged of perFile) {
+		if (judged === undefined) {
 			continue;
 		}
 
-		const judged = await judge(client, lang, fileUnits, applicable);
 		calls += judged.calls;
 		inputTokens += judged.inputTokens;
 
@@ -109,7 +139,14 @@ async function main(): Promise<void> {
 	findings.sort((a, b) => b.probability - a.probability);
 	await writeFile(values.out, JSON.stringify(findings, null, 2));
 	printSummary(findings);
-	logger.info({ calls, inputTokens, out: values.out }, 'done');
+	logger.info(
+		{
+			calls,
+			inputTokens,
+			out: values.out,
+		},
+		'done'
+	);
 }
 
 function isLang(value: string): value is Lang {
@@ -117,7 +154,10 @@ function isLang(value: string): value is Lang {
 }
 
 async function collectUnits(lang: Lang): Promise<Unit[]> {
-	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf-8' });
+	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
+		cwd: repo,
+		encoding: 'utf-8',
+	});
 	const paths = stdout
 		.split('\0')
 		.filter(path => detectLang(path) === lang)

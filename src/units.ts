@@ -9,31 +9,32 @@ import { mapConcurrent } from './shared/concurrency.js';
 
 // facts code can compute about a unit so a model never has to guess them. "code calculates, Jev judges."
 export type UnitFacts = {
-	name: string;
-	exported: boolean;
-	lines: number;
-	parameters: number;
-	returnsBoolean: boolean;
+	readonly name: string;
+	readonly isExported: boolean;
+	readonly lines: number;
+	readonly parameters: number;
+	// declared to return a boolean, the shape a predicate has
+	readonly isPredicate: boolean;
 	// call sites across the repository, not counting the definition
-	callers: number;
+	readonly callers: number;
 	// every other mention of the name across the repository: calls, references passed as values, re-exports
-	references: number;
+	readonly references: number;
 };
 
 // a function, method, module-level arrow function, top-level type, or a module-level value of some size: the
 // granularity a decision model judges at. types are units or rules about shapes would never see one; constants
 // are units or a prompt written as a string array and a grammar written as regex tables would never be seen.
 export type Unit = {
-	path: string;
-	line: number;
-	endLine: number;
+	readonly path: string;
+	readonly line: number;
+	readonly endLine: number;
 	// the first line of the unit, verbatim
-	header: string;
-	source: string;
-	facts: UnitFacts;
-	imports: readonly string[];
+	readonly header: string;
+	readonly source: string;
+	readonly facts: UnitFacts;
+	readonly imports: readonly string[];
 	// first lines of the file's other top-level declarations, so colocation and reuse questions have context
-	declarations: readonly string[];
+	readonly declarations: readonly string[];
 };
 
 // repository-wide counts by name, the two facts a single file cannot supply
@@ -55,14 +56,21 @@ type Grammar = {
 	parameters: NapiConfig;
 	// the nodes carrying the name when the unit itself has no `name` field
 	declarators: readonly string[];
-	returnsBoolean: RegExp;
+	// matches a header whose declared return type is boolean
+	predicateSignature: RegExp;
 	isExported(node: SgNode, name: string): boolean;
 };
 
 const TOP_LEVEL_TS = { any: [{ kind: 'program' }, { kind: 'export_statement' }] };
 const CALLABLE_TS = [{ kind: 'function_declaration' }, { kind: 'method_definition' }, { kind: 'arrow_function' }];
 const CALLABLE_GO = [{ kind: 'function_declaration' }, { kind: 'method_declaration' }];
-const ARROW_DECLARATION = { kind: 'variable_declarator', has: { kind: 'arrow_function', field: 'value' } };
+const ARROW_DECLARATION = {
+	kind: 'variable_declarator',
+	has: {
+		kind: 'arrow_function',
+		field: 'value',
+	},
+};
 
 const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 	[Lang.TS]: {
@@ -73,14 +81,33 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 				any: [
 					{ kind: 'function_declaration' },
 					{ kind: 'method_definition' },
-					{ kind: 'lexical_declaration', inside: TOP_LEVEL_TS, has: ARROW_DECLARATION },
-					{ kind: 'type_alias_declaration', inside: TOP_LEVEL_TS },
-					{ kind: 'interface_declaration', inside: TOP_LEVEL_TS },
-					{ kind: 'enum_declaration', inside: TOP_LEVEL_TS },
+					{
+						kind: 'lexical_declaration',
+						inside: TOP_LEVEL_TS,
+						has: ARROW_DECLARATION,
+					},
+					{
+						kind: 'type_alias_declaration',
+						inside: TOP_LEVEL_TS,
+					},
+					{
+						kind: 'interface_declaration',
+						inside: TOP_LEVEL_TS,
+					},
+					{
+						kind: 'enum_declaration',
+						inside: TOP_LEVEL_TS,
+					},
 				],
 			},
 		},
-		values: { rule: { kind: 'lexical_declaration', inside: TOP_LEVEL_TS, not: { has: ARROW_DECLARATION } } },
+		values: {
+			rule: {
+				kind: 'lexical_declaration',
+				inside: TOP_LEVEL_TS,
+				not: { has: ARROW_DECLARATION },
+			},
+		},
 		imports: { rule: { kind: 'import_statement' } },
 		declarations: {
 			rule: {
@@ -99,14 +126,30 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 		identifiers: {
 			rule: { any: [{ kind: 'identifier' }, { kind: 'property_identifier' }, { kind: 'type_identifier' }] },
 		},
-		parameters: { rule: { kind: 'formal_parameters', inside: { field: 'parameters', any: CALLABLE_TS } } },
+		parameters: {
+			rule: {
+				kind: 'formal_parameters',
+				inside: {
+					field: 'parameters',
+					any: CALLABLE_TS,
+				},
+			},
+		},
 		declarators: ['variable_declarator'],
-		returnsBoolean: /\)\s*:\s*boolean\b/,
+		predicateSignature: /\)\s*:\s*boolean\b/,
 		isExported: node => node.parent()?.kind() === 'export_statement',
 	},
 	[Lang.GO]: {
 		units: {
-			rule: { any: [...CALLABLE_GO, { kind: 'type_declaration', inside: { kind: 'source_file' } }] },
+			rule: {
+				any: [
+					...CALLABLE_GO,
+					{
+						kind: 'type_declaration',
+						inside: { kind: 'source_file' },
+					},
+				],
+			},
 		},
 		values: {
 			rule: {
@@ -131,9 +174,17 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 			rule: { any: [{ kind: 'identifier' }, { kind: 'field_identifier' }, { kind: 'type_identifier' }] },
 		},
 		// the `parameters` field, never the receiver list that precedes a method's name
-		parameters: { rule: { kind: 'parameter_list', inside: { field: 'parameters', any: CALLABLE_GO } } },
+		parameters: {
+			rule: {
+				kind: 'parameter_list',
+				inside: {
+					field: 'parameters',
+					any: CALLABLE_GO,
+				},
+			},
+		},
 		declarators: ['type_spec', 'var_spec', 'const_spec'],
-		returnsBoolean: /\)\s*(?:bool|\(bool\b)/,
+		predicateSignature: /\)\s*(?:bool|\(bool\b)/,
 		isExported: (_node, name) => /^[A-Z]/.test(name),
 	},
 };
@@ -173,10 +224,10 @@ export function extractUnits(lang: Lang, path: string, source: string, counts: R
 				source: node.text(),
 				facts: {
 					name,
-					exported: grammar.isExported(node, name),
+					isExported: grammar.isExported(node, name),
 					lines: end.line - start.line + 1,
 					parameters: countParameters(node, grammar),
-					returnsBoolean: grammar.returnsBoolean.test(header),
+					isPredicate: grammar.predicateSignature.test(header),
 					callers: counts.callers(name),
 					// the definition itself is one of the identifiers counted
 					references: Math.max(0, counts.references(name) - 1),

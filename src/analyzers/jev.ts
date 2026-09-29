@@ -89,24 +89,34 @@ const CONCURRENT_CALLS = 4;
 // judges the changed units of each file with every judge rule that has a measured threshold, several units per
 // call, and keeps the answers over the rule's threshold as findings
 export function createJev(options: JevOptions): Jev {
-	const summary: JevSummary = { model: options.config.model, units: 0, calls: 0, inputTokens: 0 };
+	const summary: JevSummary = {
+		model: options.config.model,
+		units: 0,
+		calls: 0,
+		inputTokens: 0,
+	};
 	const counts = new Map<Lang, Promise<RepoCounts>>();
 
+	// one repository count per language, started on first use and shared by every change
 	function countsFor(lang: Lang): Promise<RepoCounts> {
 		let pending = counts.get(lang);
 
 		if (pending === undefined) {
-			pending = trackedFiles(options.repo).then(paths =>
-				countRepo(
-					options.repo,
-					lang,
-					paths.filter(path => detectLang(path) === lang && !isIgnored(path, options.ignore))
-				)
-			);
+			pending = countLanguage(lang);
 			counts.set(lang, pending);
 		}
 
 		return pending;
+	}
+
+	async function countLanguage(lang: Lang): Promise<RepoCounts> {
+		const paths = await trackedFiles(options.repo);
+
+		return countRepo(
+			options.repo,
+			lang,
+			paths.filter(path => detectLang(path) === lang && !isIgnored(path, options.ignore))
+		);
 	}
 
 	async function analyze(change: Change, rules: readonly Rule[]): Promise<Finding[]> {
@@ -132,7 +142,10 @@ export function createJev(options: JevOptions): Jev {
 			.map(toFinding);
 	}
 
-	return { analyze, summary: () => ({ ...summary }) };
+	return {
+		analyze,
+		summary: () => ({ ...summary }),
+	};
 }
 
 // asks every rule about every unit, several units per call with one copy of the rulebook. the rulebook costs
@@ -145,7 +158,11 @@ export async function judge(
 	rules: readonly JudgeRule[]
 ): Promise<Judged> {
 	const rulesState = Object.fromEntries(rules.map((rule, index) => [ruleKey(index), ruleState(rule)]));
-	const judged: Judged = { judgments: [], calls: 0, inputTokens: 0 };
+	const judged: Judged = {
+		judgments: [],
+		calls: 0,
+		inputTokens: 0,
+	};
 
 	await mapConcurrent(pack(units, rules, rulesState), batch => ask(client, lang, batch, rules, rulesState, judged), {
 		concurrency: CONCURRENT_CALLS,
@@ -183,42 +200,69 @@ async function ask(
 
 		judged.calls += 1;
 		judged.inputTokens += usage.input_tokens;
-
-		batch.forEach((unit, u) => {
-			rules.forEach((rule, r) => {
-				const answer = answers[questionKey(u, r)];
-
-				if (answer?.type === 'choice') {
-					judged.judgments.push({
-						unit,
-						rule,
-						probability: answer.probabilities[Verdict.VIOLATES] ?? 0,
-						confidence: answer.confidence,
-					});
-				}
-			});
-		});
+		collect(answers, batch, rules, judged);
 	} catch (error) {
 		if (!(error instanceof BadRequestError)) {
 			throw error;
 		}
 
-		const [only] = batch;
-
-		if (batch.length === 1 && only !== undefined) {
-			logger.warn(
-				{ path: only.path, line: only.line, lines: only.facts.lines },
-				'unit too large for one jev call; skipped'
-			);
-
-			return;
-		}
-
-		// the estimate ran low for this batch; halve it and ask again
-		const half = Math.ceil(batch.length / 2);
-		await ask(client, lang, batch.slice(0, half), rules, rulesState, judged);
-		await ask(client, lang, batch.slice(half), rules, rulesState, judged);
+		await retrySmaller(client, lang, batch, rules, rulesState, judged);
 	}
+}
+
+// reads one call's answers back into judgments, one per unit and rule
+function collect(
+	answers: Record<string, { type: string; probabilities?: Record<string, number>; confidence: number } | undefined>,
+	batch: readonly Unit[],
+	rules: readonly JudgeRule[],
+	judged: Judged
+): void {
+	batch.forEach((unit, u) => {
+		rules.forEach((rule, r) => {
+			const answer = answers[questionKey(u, r)];
+
+			if (answer?.type === 'choice') {
+				judged.judgments.push({
+					unit,
+					rule,
+					probability: answer.probabilities?.[Verdict.VIOLATES] ?? 0,
+					confidence: answer.confidence,
+				});
+			}
+		});
+	});
+}
+
+// the service refused the call for size: the estimate ran low, so halve the batch and ask both halves again.
+// a single unit that is still refused is too large for any call and is skipped.
+async function retrySmaller(
+	client: TypeSafeClient,
+	lang: Lang,
+	batch: readonly Unit[],
+	rules: readonly JudgeRule[],
+	rulesState: Record<string, JsonValue>,
+	judged: Judged
+): Promise<void> {
+	const [only] = batch;
+
+	if (batch.length === 1 && only !== undefined) {
+		logger.warn(
+			{
+				path: only.path,
+				line: only.line,
+				lines: only.facts.lines,
+			},
+			'unit too large for one jev call; skipped'
+		);
+
+		return;
+	}
+
+	const half = Math.ceil(batch.length / 2);
+	await Promise.all([
+		ask(client, lang, batch.slice(0, half), rules, rulesState, judged),
+		ask(client, lang, batch.slice(half), rules, rulesState, judged),
+	]);
 }
 
 // fills calls up to the token budget in file order: the rulebook once, then each unit with its questions
@@ -291,7 +335,10 @@ function touchesChange(unit: Unit, change: Change): boolean {
 }
 
 async function trackedFiles(repo: string): Promise<string[]> {
-	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf-8' });
+	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
+		cwd: repo,
+		encoding: 'utf-8',
+	});
 
 	return stdout.split('\0').filter(path => path.length > 0);
 }
@@ -302,7 +349,11 @@ export function unitState(unit: Unit): Record<string, JsonValue> {
 	return {
 		code: unit.source,
 		facts: { ...unit.facts },
-		file: { path: unit.path, imports: [...unit.imports], declarations: [...unit.declarations] },
+		file: {
+			path: unit.path,
+			imports: [...unit.imports],
+			declarations: [...unit.declarations],
+		},
 	};
 }
 
@@ -338,7 +389,7 @@ export function contrastQuestion(ref = 'rule', code = 'code'): ChoiceQuestion {
 }
 
 export type QuestionOptions = {
-	notApplicable: boolean;
+	hasNotApplicable: boolean;
 };
 
 // the rule as a structured rubric inside the question, with only the code in the state; kept for the shape eval
@@ -353,7 +404,7 @@ export function ruleQuestion(rule: JudgeRule, options: QuestionOptions): ChoiceQ
 			not_for: 'code where the rule does not come up at all',
 			examples: rule.good.map(example => example.source),
 		},
-		...(options.notApplicable && {
+		...(options.hasNotApplicable && {
 			[Verdict.NOT_APPLICABLE]: {
 				what: 'the rule is about a construct or situation that does not appear in `code`',
 				...(rule.falsePositives.length > 0 && { examples: [...rule.falsePositives] }),
@@ -363,7 +414,10 @@ export function ruleQuestion(rule: JudgeRule, options: QuestionOptions): ChoiceQ
 
 	return {
 		type: 'choice',
-		instructions: { question: 'Does `code` violate this rule?', focus: rule.message },
+		instructions: {
+			question: 'Does `code` violate this rule?',
+			focus: rule.message,
+		},
 		criteria,
 	};
 }

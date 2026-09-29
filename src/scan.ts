@@ -1,7 +1,6 @@
 import { collectFindings } from './analyzer.js';
 import type { Analyzer } from './analyzer.js';
 import { astAnalyzer } from './analyzers/ast.js';
-import type { Jev } from './analyzers/jev.js';
 import type { Judge } from './analyzers/judge.js';
 import { readChanges } from './change.js';
 import type { Range } from './change.js';
@@ -13,7 +12,8 @@ import type { Report } from './report.js';
 import type { Rule } from './rule.js';
 import { score } from './score.js';
 import type { Scored } from './score.js';
-import type { Verified, Verifier } from './verify.js';
+import type { JevTier } from './tiers.js';
+import type { Verified } from './verify.js';
 
 export type ScanOptions = {
 	repo: string;
@@ -23,9 +23,7 @@ export type ScanOptions = {
 	// absent when running with --no-judge
 	judge?: Judge;
 	// absent when running with --no-jev or without a TypeSafe key
-	jev?: Jev;
-	// absent when running with --no-verify; checks jev's less confident findings
-	verifier?: Verifier;
+	jev?: JevTier;
 	// an older ref to score as baseline..base, so the report can show the delta
 	baseline?: string;
 };
@@ -37,14 +35,21 @@ export async function scan(options: ScanOptions): Promise<Report> {
 	const baseline =
 		options.baseline === undefined
 			? undefined
-			: pickScore((await scoreRange(options, { base: options.baseline, head: options.range.base })).scored);
+			: pickScore(
+					(
+						await scoreRange(options, {
+							base: options.baseline,
+							head: options.range.base,
+						})
+					).scored
+				);
 
 	return {
 		...scored,
 		...(baseline && { baseline }),
 		...(options.judge && { judge: options.judge.summary() }),
-		...(options.jev && { jev: options.jev.summary() }),
-		...(options.verifier && { verifier: options.verifier.summary() }),
+		...(options.jev && { jev: options.jev.analyzer.summary() }),
+		...(options.jev?.verifier && { verifier: options.jev.verifier.summary() }),
 		...(rejected.length > 0 && { rejected }),
 	};
 }
@@ -59,14 +64,18 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 	const analyzers: Analyzer[] = [
 		astAnalyzer,
 		...(options.judge ? [options.judge.analyze] : []),
-		...(options.jev ? [options.jev.analyze] : []),
+		...(options.jev ? [options.jev.analyzer.analyze] : []),
 	];
 
 	const changes = await readChanges(options.repo, range, options.config.ignore);
 	const findings = await collectFindings(changes, enabled, analyzers);
-	const confirmed = await confirm(findings, enabled, { repo: options.repo, ignore: options.config.ignore });
-	const verified = options.verifier
-		? await options.verifier.verify(confirmed.kept, changes, enabled)
+	const confirmed = await confirm(findings, enabled, {
+		repo: options.repo,
+		ignore: options.config.ignore,
+	});
+	const verifier = options.jev?.verifier;
+	const verified = verifier
+		? await verifier.verify(confirmed.kept, changes, enabled)
 		: unverified(confirmed.kept, options.config.jev.confidenceFloor);
 
 	return {
@@ -84,9 +93,17 @@ function unverified(findings: readonly Finding[], floor: number): Verified {
 		(finding.origin === Origin.JEV && finding.confidence < floor ? rejected : kept).push(finding);
 	}
 
-	return { kept, rejected };
+	return {
+		kept,
+		rejected,
+	};
 }
 
 function pickScore({ overall, grade, floor, axes }: Scored): Report['baseline'] {
-	return { overall, grade, floor, axes };
+	return {
+		overall,
+		grade,
+		floor,
+		axes,
+	};
 }

@@ -107,7 +107,7 @@ const SHAPES: readonly Shape[] = [
 		state: fixture => ({
 			code: { language: languageName(fixture.example.lang), path: '', source: fixture.example.source },
 		}),
-		question: fixture => ruleQuestion(heldOut(fixture), { notApplicable: false }),
+		question: fixture => ruleQuestion(heldOut(fixture), { hasNotApplicable: false }),
 	},
 	{
 		// same, with a third option for code the rule has nothing to say about
@@ -115,7 +115,7 @@ const SHAPES: readonly Shape[] = [
 		state: fixture => ({
 			code: { language: languageName(fixture.example.lang), path: '', source: fixture.example.source },
 		}),
-		question: fixture => ruleQuestion(heldOut(fixture), { notApplicable: true }),
+		question: fixture => ruleQuestion(heldOut(fixture), { hasNotApplicable: true }),
 	},
 ];
 
