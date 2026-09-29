@@ -55,8 +55,10 @@ async function readIndex(path: string): Promise<z.infer<typeof indexSchema>> {
 }
 
 async function main(): Promise<void> {
-	const rules = await loadRules(values.rules);
-	const indexes = await Promise.all(SKILL_DIRS.map(dir => readIndex(join(values.skills, dir, 'rules.json'))));
+	const [rules, ...indexes] = await Promise.all([
+		loadRules(values.rules),
+		...SKILL_DIRS.map(dir => readIndex(join(values.skills, dir, 'rules.json'))),
+	]);
 	const sections = new Map(indexes.flatMap(index => index.rules).map(section => [section.id, section]));
 
 	const unknown = rules.flatMap(rule => rule.guide.filter(id => !sections.has(id)).map(id => `${rule.id} -> ${id}`));

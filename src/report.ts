@@ -50,6 +50,10 @@ export function renderReport(report: Report, options: RenderOptions): string {
 			return renderJson(report);
 		case Format.MARKDOWN:
 			return renderMarkdown(report);
+		default: {
+			const exhaustive: never = options.format;
+			throw new Error(`unhandled format: ${String(exhaustive)}`);
+		}
 	}
 }
 

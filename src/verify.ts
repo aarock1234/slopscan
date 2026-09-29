@@ -54,13 +54,13 @@ export type Verifier = {
 };
 
 export type VerifierOptions = {
-	model: LanguageModel;
-	modelId: string;
-	config: VerifyConfig;
-	repo: string;
-	cacheDir: string;
+	readonly model: LanguageModel;
+	readonly modelId: string;
+	readonly config: VerifyConfig;
+	readonly repo: string;
+	readonly cacheDir: string;
 	// jev findings at or above this confidence pass without a check
-	confidenceFloor: number;
+	readonly confidenceFloor: number;
 };
 
 const VerdictKind = {

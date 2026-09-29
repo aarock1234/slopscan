@@ -15,7 +15,10 @@ import { RULES_DIR } from '../src/shared/paths.js';
 
 const { values, positionals } = parseArgs({
 	options: {
-		'dry-run': { type: 'boolean', default: false },
+		'dry-run': {
+			type: 'boolean',
+			default: false,
+		},
 	},
 	allowPositionals: true,
 	strict: true,
@@ -30,8 +33,8 @@ async function main(): Promise<void> {
 		throw new Error('usage: apply-guide.ts <report.md> [--dry-run]');
 	}
 
-	const proposals = parseProposals(await readFile(reportPath, 'utf-8'));
-	const rules = await loadRules(RULES_DIR);
+	const [report, rules] = await Promise.all([readFile(reportPath, 'utf-8'), loadRules(RULES_DIR)]);
+	const proposals = parseProposals(report);
 	let written = 0;
 
 	for (const rule of rules) {
@@ -55,7 +58,12 @@ async function main(): Promise<void> {
 	}
 
 	logger.info(
-		{ proposals: proposals.size, rules: rules.length, written, dryRun: values['dry-run'] },
+		{
+			proposals: proposals.size,
+			rules: rules.length,
+			written,
+			dryRun: values['dry-run'],
+		},
 		'guide ids applied'
 	);
 }
@@ -83,7 +91,10 @@ function parseProposals(report: string): Map<string, string[]> {
 // rewrites only the frontmatter, leaving the body untouched
 async function writeGuide(path: string, guide: readonly string[]): Promise<void> {
 	const file = matter(await readFile(path, 'utf-8'));
-	const data = { ...file.data, guide: [...guide] };
+	const data = {
+		...file.data,
+		guide: [...guide],
+	};
 
 	await writeFile(path, matter.stringify(file.content, data));
 }

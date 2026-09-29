@@ -20,8 +20,8 @@ const KEY_NAME: Readonly<Record<Provider, string>> = {
 };
 
 type Spec = {
-	provider: Provider;
-	modelId: string;
+	readonly provider: Provider;
+	readonly modelId: string;
 };
 
 // whether the key a "provider/model-id" spec needs is set, for callers that should stay quiet without it

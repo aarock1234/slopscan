@@ -129,7 +129,7 @@ export function createJev(options: JevOptions): Jev {
 		}
 
 		const units = extractUnits(change.lang, change.path, change.source, await countsFor(change.lang)).filter(unit =>
-			touchesChange(unit, change)
+			hasChangedLines(unit, change)
 		);
 		summary.units += units.length;
 
@@ -322,7 +322,7 @@ function toFinding({ unit, rule, confidence }: Judgment): Finding {
 }
 
 // a unit is judged when this change touched any of its lines
-function touchesChange(unit: Unit, change: Change): boolean {
+function hasChangedLines(unit: Unit, change: Change): boolean {
 	for (const line of change.changedLines) {
 		if (line >= unit.line && line <= unit.endLine) {
 			return true;
