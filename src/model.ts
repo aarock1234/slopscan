@@ -40,7 +40,9 @@ function isProvider(value: string): value is Provider {
 
 function requireKey(name: string, value: string | undefined): string {
 	if (value === undefined) {
-		throw new ConfigError(`${name} is required for the judge; set it or run with --no-judge`);
+		throw new ConfigError(
+			`${name} is required by the configured judge model; set it, change judge.model, or run with --no-judge --no-verify`
+		);
 	}
 
 	return value;
