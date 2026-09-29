@@ -1,12 +1,13 @@
-// asks TypeSafe's Jev whether each judge-rule fixture violates its rule, in several phrasings, and measures
-// how well bad and good examples separate per rule and per phrasing. two calls per fixture: one with the
-// rule's other examples as reference data in the state, one without. cents per run.
+// compares input shapes for TypeSafe's Jev on the judge-rule fixtures. every shape is one call per fixture
+// asking the same contrast choice: does the code belong with the rule's bad examples or its good ones. the
+// fixture under test is never among its own reference examples. cents per run.
 //
-//   pnpm script scripts/eval-jev.ts [--rule <id>]
+//   pnpm script scripts/eval-jev.ts [--rule <id>] [--shape <name>]
 
 import { parseArgs } from 'node:util';
 
 import { TypeSafeClient } from '@typesafe-ai/sdk';
+import type { EntryType } from '@typesafe-ai/sdk';
 
 import { Detect, loadRules } from '../src/rule.js';
 import type { Example, JudgeRule } from '../src/rule.js';
@@ -17,30 +18,12 @@ import { RULES_DIR } from '../src/shared/paths.js';
 const { values } = parseArgs({
 	options: {
 		rule: { type: 'string' },
+		shape: { type: 'string' },
 	},
 	strict: true,
 });
 
-const Variant = {
-	// question form with the rule's message and why in the instructions
-	INLINE: 'inline',
-	// generic question, the rule travels as structured state
-	STRUCTURED: 'structured',
-	// statement form
-	STATEMENT: 'statement',
-	// criteria spell out the violation and the exceptions
-	CRITERIA: 'criteria',
-	// the rule's other examples ride along in the state as reference data
-	FEWSHOT: 'fewshot',
-	// choice between resembling the bad examples or the good ones
-	CONTRAST: 'contrast',
-	// ordered rubric; mass on the violation levels is the probability
-	RUBRIC: 'rubric',
-} as const;
-
-type Variant = (typeof Variant)[keyof typeof Variant];
-
-const variantValues = Object.values(Variant) as [Variant, ...Variant[]];
+const THRESHOLD = 0.5;
 
 const Kind = {
 	BAD: 'bad',
@@ -53,30 +36,138 @@ type Fixture = {
 	rule: JudgeRule;
 	example: Example;
 	kind: Kind;
+	// 1-based position within the rule's bad or good examples
+	index: number;
+};
+
+// a shape builds the state for one fixture; the question is always the same contrast choice
+type Shape = {
+	name: string;
+	state(fixture: Fixture): EntryType;
+	instructions: string;
+	violates: string;
+	follows: string;
 };
 
 type Verdict = {
 	ruleId: string;
 	kind: Kind;
-	probability: Readonly<Record<Variant, number>>;
+	index: number;
+	probability: ReadonlyMap<string, number>;
 };
 
-type VariantStats = {
-	// share of fixtures on the right side of 0.5
-	accuracy: number;
-	// smallest bad probability minus largest good probability; positive means some threshold is perfect
-	separation: number;
+type ShapeStats = {
+	correct: number;
+	separable: number;
+	meanSeparation: number;
 };
 
-type RuleSummary = {
-	id: string;
-	bad: number;
-	good: number;
-	stats: Readonly<Record<Variant, VariantStats>>;
-	best: Variant;
-};
+function code(example: Example) {
+	return {
+		language: example.lang === 'ts' ? 'TypeScript' : 'Go',
+		source: example.source,
+	};
+}
 
-const GLOBAL_THRESHOLD = 0.5;
+function references({ rule, example }: Fixture) {
+	return {
+		violates: rule.bad.filter(other => other !== example).map(other => other.source),
+		follows: rule.good.filter(other => other !== example).map(other => other.source),
+	};
+}
+
+const SHAPES: readonly Shape[] = [
+	{
+		name: 'baseline',
+		state: fixture => ({
+			...code(fixture.example),
+			code: fixture.example.source,
+			rule: {
+				id: fixture.rule.id,
+				message: fixture.rule.message,
+				why: fixture.rule.why,
+				notAViolation: [...fixture.rule.falsePositives],
+				examples: { bad: references(fixture).violates, good: references(fixture).follows },
+			},
+		}),
+		instructions: 'With respect to `rule`, which set does `code` belong with?',
+		violates: 'code has the same problem as rule.examples.bad',
+		follows: 'code is written the way rule.examples.good is, or is an accepted exception in rule.notAViolation',
+	},
+	{
+		name: 'semantic',
+		state: fixture => ({
+			code: code(fixture.example),
+			rule: {
+				violation: fixture.rule.message,
+				reasoning: fixture.rule.why,
+				exceptions: [...fixture.rule.falsePositives],
+				...references(fixture),
+			},
+		}),
+		instructions:
+			'Does `code` violate `rule` like the examples in `rule.violates`, or follow it like `rule.follows`?',
+		violates: 'code contains the violation',
+		follows: 'code follows the rule or is one of rule.exceptions',
+	},
+	{
+		name: 'no-reasoning',
+		state: fixture => ({
+			code: code(fixture.example),
+			rule: {
+				violation: fixture.rule.message,
+				exceptions: [...fixture.rule.falsePositives],
+				...references(fixture),
+			},
+		}),
+		instructions:
+			'Does `code` violate `rule` like the examples in `rule.violates`, or follow it like `rule.follows`?',
+		violates: 'code contains the violation',
+		follows: 'code follows the rule or is one of rule.exceptions',
+	},
+	{
+		name: 'no-message',
+		state: fixture => ({
+			code: code(fixture.example),
+			rule: {
+				reasoning: fixture.rule.why,
+				exceptions: [...fixture.rule.falsePositives],
+				...references(fixture),
+			},
+		}),
+		instructions:
+			'Does `code` violate `rule` like the examples in `rule.violates`, or follow it like `rule.follows`?',
+		violates: 'code contains the violation',
+		follows: 'code follows the rule or is one of rule.exceptions',
+	},
+	{
+		name: 'no-exceptions',
+		state: fixture => ({
+			code: code(fixture.example),
+			rule: {
+				violation: fixture.rule.message,
+				reasoning: fixture.rule.why,
+				...references(fixture),
+			},
+		}),
+		instructions:
+			'Does `code` violate `rule` like the examples in `rule.violates`, or follow it like `rule.follows`?',
+		violates: 'code contains the violation',
+		follows: 'code follows the rule',
+	},
+	{
+		name: 'examples-only',
+		state: fixture => ({
+			code: code(fixture.example),
+			...references(fixture),
+		}),
+		instructions: 'Which set does `code` belong with?',
+		violates: 'code shares the problem shown in `violates`',
+		follows: 'code is written like `follows`',
+	},
+];
+
+const shapes = SHAPES.filter(shape => values.shape === undefined || shape.name === values.shape);
 
 async function main(): Promise<void> {
 	const client = new TypeSafeClient();
@@ -89,9 +180,13 @@ async function main(): Promise<void> {
 		throw new Error('no judge rules matched');
 	}
 
+	if (shapes.length === 0) {
+		throw new Error(`unknown shape; one of ${SHAPES.map(shape => shape.name).join(', ')}`);
+	}
+
 	const fixtures: Fixture[] = rules.flatMap(rule => [
-		...rule.bad.map(example => ({ rule, example, kind: Kind.BAD })),
-		...rule.good.map(example => ({ rule, example, kind: Kind.GOOD })),
+		...rule.bad.map((example, index) => ({ rule, example, kind: Kind.BAD, index: index + 1 })),
+		...rule.good.map((example, index) => ({ rule, example, kind: Kind.GOOD, index: index + 1 })),
 	]);
 
 	let inputTokens = 0;
@@ -99,193 +194,107 @@ async function main(): Promise<void> {
 	const verdicts = await mapConcurrent(
 		fixtures,
 		async (fixture): Promise<Verdict> => {
-			const [plain, withReferences] = await Promise.all([
-				askPlain(client, fixture),
-				askWithReferences(client, fixture),
-			]);
-			inputTokens += plain.usage.input_tokens + withReferences.usage.input_tokens;
+			const probability = new Map<string, number>();
 
-			return {
-				ruleId: fixture.rule.id,
-				kind: fixture.kind,
-				probability: {
-					[Variant.INLINE]: plain.answers.inline.noul,
-					[Variant.STRUCTURED]: plain.answers.structured.noul,
-					[Variant.STATEMENT]: plain.answers.statement.noul,
-					[Variant.CRITERIA]: plain.answers.criteria.noul,
-					[Variant.FEWSHOT]: withReferences.answers.fewshot.noul,
-					[Variant.CONTRAST]: withReferences.answers.contrast.probabilities.bad,
-					[Variant.RUBRIC]: violationMass(withReferences.answers.rubric.probabilities),
-				},
-			};
+			for (const shape of shapes) {
+				const { answers, usage } = await client.systemOne({
+					state: shape.state(fixture),
+					questions: {
+						verdict: {
+							type: 'choice',
+							instructions: shape.instructions,
+							criteria: { violates: shape.violates, follows: shape.follows },
+						},
+					},
+				});
+
+				inputTokens += usage.input_tokens;
+				probability.set(shape.name, answers.verdict.probabilities.violates);
+			}
+
+			return { ruleId: fixture.rule.id, kind: fixture.kind, index: fixture.index, probability };
 		},
 		{ concurrency: 8 }
 	);
 
-	const summaries = rules.map(rule =>
-		summarize(
-			rule,
+	printRuleTable(rules, verdicts);
+	printTotals(rules, verdicts);
+	printMisses(verdicts);
+	logger.info({ calls: verdicts.length * shapes.length, inputTokens }, 'done');
+}
+
+// smallest bad probability minus largest good probability; positive means some threshold is perfect
+function separation(shape: string, verdicts: readonly Verdict[]): number {
+	const bad = verdicts
+		.filter(verdict => verdict.kind === Kind.BAD)
+		.map(verdict => verdict.probability.get(shape) ?? 0);
+	const good = verdicts
+		.filter(verdict => verdict.kind === Kind.GOOD)
+		.map(verdict => verdict.probability.get(shape) ?? 0);
+
+	return Math.min(...bad) - Math.max(...good, 0);
+}
+
+function isCorrect(verdict: Verdict, shape: string): boolean {
+	const probability = verdict.probability.get(shape) ?? 0;
+
+	return verdict.kind === Kind.BAD ? probability >= THRESHOLD : probability < THRESHOLD;
+}
+
+function statsFor(shape: string, rules: readonly JudgeRule[], verdicts: readonly Verdict[]): ShapeStats {
+	const separations = rules.map(rule =>
+		separation(
+			shape,
 			verdicts.filter(verdict => verdict.ruleId === rule.id)
 		)
 	);
 
-	printTable(summaries);
-	printTotals(summaries, verdicts);
-	logger.info({ calls: verdicts.length * 2, inputTokens }, 'done');
-}
-
-function ruleState(rule: JudgeRule) {
 	return {
-		id: rule.id,
-		message: rule.message,
-		why: rule.why,
-		notAViolation: [...rule.falsePositives],
+		correct: verdicts.filter(verdict => isCorrect(verdict, shape)).length,
+		separable: separations.filter(value => value > 0).length,
+		meanSeparation: separations.reduce((sum, value) => sum + value, 0) / separations.length,
 	};
 }
 
-function codeState(example: Example) {
-	return {
-		language: example.lang === 'ts' ? 'TypeScript' : 'Go',
-		code: example.source,
-	};
-}
+function printRuleTable(rules: readonly JudgeRule[], verdicts: readonly Verdict[]): void {
+	const header = shapes.map(shape => shape.name.padStart(13)).join(' ');
+	process.stdout.write(`${'rule (separation per shape)'.padEnd(46)} ${header}\n`);
 
-function askPlain(client: TypeSafeClient, { rule, example }: Fixture) {
-	const exceptions = rule.falsePositives.length > 0 ? rule.falsePositives.join('; ') : 'none';
+	for (const rule of rules) {
+		const own = verdicts.filter(verdict => verdict.ruleId === rule.id);
+		const cells = shapes.map(shape => formatSigned(separation(shape.name, own)).padStart(13)).join(' ');
 
-	return client.systemOne({
-		state: { ...codeState(example), rule: ruleState(rule) },
-		questions: {
-			inline: {
-				type: 'noul',
-				instructions: `Does the code violate this rule? Rule: ${rule.message}. ${rule.why}`,
-			},
-			structured: {
-				type: 'noul',
-				instructions: 'Does `code` violate `rule`?',
-			},
-			statement: {
-				type: 'noul',
-				instructions: `The code violates the rule: ${rule.message}.`,
-			},
-			criteria: {
-				type: 'noul',
-				instructions: 'Does `code` violate `rule`?',
-				criteria: {
-					true: `the code shows the problem: ${rule.message}. ${rule.why}`,
-					false: `the code follows the rule, or it is one of these accepted cases: ${exceptions}`,
-				},
-			},
-		},
-	});
-}
-
-// the fixture under test is held out of the reference examples so it never sees itself
-function askWithReferences(client: TypeSafeClient, { rule, example }: Fixture) {
-	const references = {
-		bad: rule.bad.filter(other => other !== example).map(other => other.source),
-		good: rule.good.filter(other => other !== example).map(other => other.source),
-	};
-
-	return client.systemOne({
-		state: { ...codeState(example), rule: { ...ruleState(rule), examples: references } },
-		questions: {
-			fewshot: {
-				type: 'noul',
-				instructions:
-					'Does `code` have the problem described by `rule`, as shown in `rule.examples.bad` and absent from `rule.examples.good`?',
-			},
-			contrast: {
-				type: 'choice',
-				instructions: 'With respect to `rule`, which set does `code` belong with?',
-				criteria: {
-					bad: 'code has the same problem as rule.examples.bad',
-					good: 'code is written the way rule.examples.good is, or is an accepted exception in rule.notAViolation',
-				},
-			},
-			rubric: {
-				type: 'score',
-				instructions: 'How badly does `code` violate `rule`?',
-				criteria: [
-					'no violation; the code follows the rule or is an accepted exception',
-					'borderline; a reviewer might mention it',
-					'clear violation with real reading or maintenance cost',
-					'severe violation; misleading or likely to cause a bug',
-				],
-			},
-		},
-	});
-}
-
-// probability mass on the rubric levels that mean "a violation is present"
-function violationMass(probabilities: Readonly<Record<string, number>>): number {
-	return Object.entries(probabilities)
-		.filter(([level]) => Number(level) >= 1)
-		.reduce((sum, [, probability]) => sum + probability, 0);
-}
-
-function summarize(rule: JudgeRule, verdicts: readonly Verdict[]): RuleSummary {
-	const bad = verdicts.filter(verdict => verdict.kind === Kind.BAD);
-	const good = verdicts.filter(verdict => verdict.kind === Kind.GOOD);
-	const stats = Object.fromEntries(variantValues.map(variant => [variant, statsFor(variant, bad, good)])) as Record<
-		Variant,
-		VariantStats
-	>;
-
-	const best = variantValues.reduce((leader, variant) =>
-		stats[variant].separation > stats[leader].separation ? variant : leader
-	);
-
-	return { id: rule.id, bad: bad.length, good: good.length, stats, best };
-}
-
-function statsFor(variant: Variant, bad: readonly Verdict[], good: readonly Verdict[]): VariantStats {
-	const total = bad.length + good.length;
-	const correct = [...bad, ...good].filter(verdict => isCorrect(verdict, variant, GLOBAL_THRESHOLD)).length;
-	const lowestBad = Math.min(...bad.map(verdict => verdict.probability[variant]));
-	const highestGood = Math.max(...good.map(verdict => verdict.probability[variant]), 0);
-
-	return {
-		accuracy: total === 0 ? 0 : correct / total,
-		separation: lowestBad - highestGood,
-	};
-}
-
-function isCorrect(verdict: Verdict, variant: Variant, threshold: number): boolean {
-	const probability = verdict.probability[variant];
-
-	return verdict.kind === Kind.BAD ? probability >= threshold : probability < threshold;
-}
-
-function printTable(summaries: readonly RuleSummary[]): void {
-	const header = variantValues.map(variant => variant.padStart(10)).join(' ');
-	process.stdout.write(`${'rule (separation per variant)'.padEnd(46)} ${header}   best\n`);
-
-	for (const summary of summaries) {
-		const cells = variantValues
-			.map(variant => formatSigned(summary.stats[variant].separation).padStart(10))
-			.join(' ');
-
-		process.stdout.write(`${summary.id.padEnd(46)} ${cells}   ${summary.best}\n`);
+		process.stdout.write(`${rule.id.padEnd(46)} ${cells}\n`);
 	}
 }
 
-function printTotals(summaries: readonly RuleSummary[], verdicts: readonly Verdict[]): void {
+function printTotals(rules: readonly JudgeRule[], verdicts: readonly Verdict[]): void {
 	process.stdout.write('\n');
 
-	for (const variant of variantValues) {
-		const correct = verdicts.filter(verdict => isCorrect(verdict, variant, GLOBAL_THRESHOLD)).length;
-		const separable = summaries.filter(summary => summary.stats[variant].separation > 0).length;
-		const meanSeparation =
-			summaries.reduce((sum, summary) => sum + summary.stats[variant].separation, 0) / summaries.length;
+	for (const shape of shapes) {
+		const stats = statsFor(shape.name, rules, verdicts);
 
 		process.stdout.write(
-			`${variant.padEnd(11)} ${correct}/${verdicts.length} correct at 0.5   ${separable}/${summaries.length} rules separable   mean separation ${formatSigned(meanSeparation)}\n`
+			`${shape.name.padEnd(14)} ${stats.correct}/${verdicts.length} correct at ${THRESHOLD}   ${stats.separable}/${rules.length} rules separable   mean separation ${formatSigned(stats.meanSeparation)}\n`
 		);
 	}
+}
 
-	const bestPerRule = summaries.filter(summary => summary.stats[summary.best].separation > 0).length;
-	process.stdout.write(`\nbest variant per rule: ${bestPerRule}/${summaries.length} rules separable\n`);
+// every fixture on the wrong side of the threshold, so the offending example can be read and fixed
+function printMisses(verdicts: readonly Verdict[]): void {
+	const misses = verdicts.flatMap(verdict =>
+		shapes
+			.filter(shape => !isCorrect(verdict, shape.name))
+			.map(shape => {
+				const probability = (verdict.probability.get(shape.name) ?? 0).toFixed(2);
+
+				return `  ${shape.name.padEnd(14)} ${verdict.ruleId.padEnd(46)} ${verdict.kind} example ${verdict.index} scored ${probability}`;
+			})
+	);
+
+	if (misses.length > 0) {
+		process.stdout.write(`\nmisses at ${THRESHOLD}:\n${misses.join('\n')}\n`);
+	}
 }
 
 function formatSigned(value: number): string {
