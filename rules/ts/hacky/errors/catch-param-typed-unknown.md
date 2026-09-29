@@ -2,16 +2,19 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        any:
-            - kind: catch_clause
-              has:
-                  field: type
-                  regex: 'any'
-            - pattern: $E as Error
-              inside:
-                  kind: catch_clause
-                  stopBy: end
+  rule:
+    any:
+      - kind: catch_clause
+        has:
+          field: type
+          regex: any
+      - pattern: $E as Error
+        inside:
+          kind: catch_clause
+          stopBy: end
+guide:
+  - ts.error-propagation
+  - ts.result-pattern
 ---
 
 ## Why

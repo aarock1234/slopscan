@@ -7,6 +7,8 @@ falsePositives:
   - a comment on a declaration inside a grouped var or const block
 jev:
   threshold: 0.56
+guide:
+  - go.doc-comments
 ---
 
 ## Why

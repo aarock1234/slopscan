@@ -9,6 +9,8 @@ falsePositives:
   - the caller never needs the concrete type again
 jev:
   threshold: 0.46
+guide:
+  - go.typed-values
 ---
 
 ## Why

@@ -9,6 +9,8 @@ falsePositives:
   - a parameter that needs unexported fields of the concrete type
 jev:
   threshold: 0.45
+guide:
+  - go.consumer-interfaces
 ---
 
 ## Why

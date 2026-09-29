@@ -2,17 +2,19 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: binary_expression
-        all:
-            - has:
-                  field: operator
-                  regex: '^\+$'
-            - has:
-                  kind: string
-        not:
-            inside:
-                kind: augmented_assignment_expression
+  rule:
+    kind: binary_expression
+    all:
+      - has:
+          field: operator
+          regex: ^\+$
+      - has:
+          kind: string
+    not:
+      inside:
+        kind: augmented_assignment_expression
+guide:
+  - ts.template-literals
 ---
 
 ## Why

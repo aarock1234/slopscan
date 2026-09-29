@@ -18,6 +18,12 @@ falsePositives:
     handler or a job runner
 jev:
   threshold: 0.5
+guide:
+  - go.context
+  - go.persistence-contracts
+  - go.transactions
+  - ts.responsibilities
+  - ts.retry-safety-and-budgets
 ---
 
 ## Why

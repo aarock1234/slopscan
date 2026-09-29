@@ -7,6 +7,8 @@ falsePositives:
   - a second call that does not depend on the first result
 jev:
   threshold: 0.5
+guide:
+  - go.error-propagation
 ---
 
 ## Why

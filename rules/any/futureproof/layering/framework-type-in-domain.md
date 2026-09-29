@@ -27,6 +27,10 @@ falsePositives:
   - 'a package whose purpose is one protocol, such as an RDAP or WHOIS client'
 jev:
   threshold: 0.46
+guide:
+  - go.function-boundaries
+  - go.layers
+  - ts.layers
 ---
 
 ## Why

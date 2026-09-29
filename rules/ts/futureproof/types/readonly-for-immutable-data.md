@@ -9,6 +9,8 @@ falsePositives:
     author's control
 jev:
   threshold: 0.52
+guide:
+  - ts.readonly
 ---
 
 ## Why

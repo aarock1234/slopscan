@@ -2,8 +2,11 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        pattern: $X as unknown as $T
+  rule:
+    pattern: $X as unknown as $T
+guide:
+  - ts.boundary-and-domain-contracts
+  - ts.typed-values
 ---
 
 ## Why

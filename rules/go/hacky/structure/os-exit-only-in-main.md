@@ -2,20 +2,23 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        kind: call_expression
+  rule:
+    kind: call_expression
+    has:
+      field: function
+      regex: ^(os\.Exit|log\.Fatal(f|ln)?)$
+    not:
+      inside:
+        kind: function_declaration
+        stopBy: end
         has:
-            field: function
-            regex: '^(os\.Exit|log\.Fatal(f|ln)?)$'
-        not:
-            inside:
-                kind: function_declaration
-                stopBy: end
-                has:
-                    field: name
-                    regex: '^main$'
+          field: name
+          regex: ^main$
 ignore:
-    - '**/*_test.go'
+  - '**/*_test.go'
+guide:
+  - go.dependency-wiring
+  - go.shutdown
 ---
 
 ## Why

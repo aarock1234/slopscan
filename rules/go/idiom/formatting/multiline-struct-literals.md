@@ -2,23 +2,25 @@
 severity: info
 detect: ast
 ast:
-    rule:
-        kind: composite_literal
-        regex: '^[^\n]*$'
-        all:
-            - has:
-                  field: type
-                  any:
-                      - kind: type_identifier
-                      - kind: qualified_type
-                      - kind: generic_type
-            - has:
-                  field: body
-                  has:
-                      kind: keyed_element
-                      precedes:
-                          kind: keyed_element
-                          stopBy: end
+  rule:
+    kind: composite_literal
+    regex: '^[^\n]*$'
+    all:
+      - has:
+          field: type
+          any:
+            - kind: type_identifier
+            - kind: qualified_type
+            - kind: generic_type
+      - has:
+          field: body
+          has:
+            kind: keyed_element
+            precedes:
+              kind: keyed_element
+              stopBy: end
+guide:
+  - go.struct-literals
 ---
 
 ## Why

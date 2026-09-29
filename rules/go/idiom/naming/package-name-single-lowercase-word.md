@@ -2,11 +2,14 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: package_identifier
-        regex: '[A-Z_]'
-        not:
-            regex: '^[a-z0-9]+_test$'
+  rule:
+    kind: package_identifier
+    regex: '[A-Z_]'
+    not:
+      regex: '^[a-z0-9]+_test$'
+guide:
+  - go.naming
+  - go.package-names
 ---
 
 ## Why

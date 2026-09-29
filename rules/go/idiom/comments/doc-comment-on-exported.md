@@ -2,36 +2,38 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        any:
-            - kind: function_declaration
-              has:
-                  field: name
-                  regex: '^[A-Z]'
-            - kind: method_declaration
-              has:
-                  field: name
-                  regex: '^[A-Z]'
-            - kind: type_declaration
-              inside:
-                  kind: source_file
-              has:
-                  kind: type_spec
-                  has:
-                      field: name
-                      regex: '^[A-Z]'
-        not:
-            follows:
-                kind: comment
+  rule:
+    any:
+      - kind: function_declaration
+        has:
+          field: name
+          regex: '^[A-Z]'
+      - kind: method_declaration
+        has:
+          field: name
+          regex: '^[A-Z]'
+      - kind: type_declaration
+        inside:
+          kind: source_file
+        has:
+          kind: type_spec
+          has:
+            field: name
+            regex: '^[A-Z]'
+    not:
+      follows:
+        kind: comment
 ignore:
-    - '**/*_test.go'
-    - '**/*.pb.go'
-    - '**/*_gen.go'
+  - '**/*_test.go'
+  - '**/*.pb.go'
+  - '**/*_gen.go'
+guide:
+  - go.doc-comments
 ---
 
 ## Why
 
-An exported name is the package's contract, and its doc comment is what `go doc` and every editor show at the call site. Without one the reader opens the source to learn what the function promises, and the omission tends to spread to the next export. One sentence starting with the name is enough.
+An exported name is the package's contract, and its doc comment is what `go doc` and every editor show at the call site. Without one the reader opens the source to learn what the function promises, and the omission tends to spread to the next export. One sentence starting with the name is enough. The matcher checks exported functions, methods, and top-level types; the guide asks the same of exported constants, variables, struct fields, and interface methods, where a declaration group may share one comment and members with distinct meaning, units, or lifecycle get their own.
 
 ## Message
 

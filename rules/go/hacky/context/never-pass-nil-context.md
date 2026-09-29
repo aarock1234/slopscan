@@ -2,17 +2,19 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        kind: call_expression
-        all:
-            - has:
-                  field: function
-                  regex: '(^context\.With\w+|Context)$'
-            - has:
-                  field: arguments
-                  has:
-                      kind: nil
-                      nthChild: 1
+  rule:
+    kind: call_expression
+    all:
+      - has:
+          field: function
+          regex: (^context\.With\w+|Context)$
+      - has:
+          field: arguments
+          has:
+            kind: nil
+            nthChild: 1
+guide:
+  - go.context
 ---
 
 ## Why

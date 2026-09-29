@@ -13,6 +13,8 @@ falsePositives:
     following statement
 jev:
   threshold: 0.58
+guide:
+  - ts.comments
 ---
 
 ## Why

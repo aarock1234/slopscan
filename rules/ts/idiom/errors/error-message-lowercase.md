@@ -2,15 +2,17 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        any:
-            - pattern: new $CLS($MSG)
-            - pattern: new $CLS($MSG, $$$REST)
-    constraints:
-        CLS:
-            regex: 'Error$'
-        MSG:
-            regex: '^.[A-Z][a-z]'
+  rule:
+    any:
+      - pattern: new $CLS($MSG)
+      - pattern: 'new $CLS($MSG, $$$REST)'
+  constraints:
+    CLS:
+      regex: Error$
+    MSG:
+      regex: '^.[A-Z][a-z]'
+guide:
+  - ts.error-propagation
 ---
 
 ## Why

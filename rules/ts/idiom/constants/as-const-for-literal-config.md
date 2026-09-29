@@ -2,28 +2,31 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        pattern: const $NAME = $OBJ
-        inside:
-            any:
-                - kind: program
-                - kind: export_statement
-    constraints:
-        NAME:
-            regex: '^[A-Z]'
-        OBJ:
-            kind: object
-            has:
-                kind: pair
+  rule:
+    pattern: const $NAME = $OBJ
+    inside:
+      any:
+        - kind: program
+        - kind: export_statement
+  constraints:
+    NAME:
+      regex: '^[A-Z]'
+    OBJ:
+      kind: object
+      has:
+        kind: pair
+      not:
+        has:
+          kind: pair
+          has:
+            field: value
             not:
-                has:
-                    kind: pair
-                    has:
-                        field: value
-                        not:
-                            any:
-                                - kind: string
-                                - kind: number
+              any:
+                - kind: string
+                - kind: number
+guide:
+  - ts.constants
+  - ts.readonly
 ---
 
 ## Why

@@ -2,14 +2,18 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: interface_type
-        has:
-            kind: method_elem
-            nthChild:
-                position: 5
-                ofRule:
-                    kind: method_elem
+  rule:
+    kind: interface_type
+    has:
+      kind: method_elem
+      nthChild:
+        position: 5
+        ofRule:
+          kind: method_elem
+guide:
+  - go.consumer-interfaces
+  - go.interface-composition
+  - go.philosophy
 ---
 
 ## Why

@@ -4,8 +4,13 @@ detect: judge
 falsePositives:
   - the variable is read again after its address is taken
   - the module targets a Go version older than 1.26
+  - >-
+    the local's name explains a calculation that would read as opaque inline,
+    such as a derived deadline or a converted unit
+guide:
+  - go.optional-fields
 jev:
-  threshold: 0.46
+  threshold: 0.39
 ---
 
 ## Why

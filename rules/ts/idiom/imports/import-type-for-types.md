@@ -11,6 +11,8 @@ falsePositives:
     `type` modifier
 jev:
   threshold: 0.45
+guide:
+  - ts.import-order
 ---
 
 ## Why

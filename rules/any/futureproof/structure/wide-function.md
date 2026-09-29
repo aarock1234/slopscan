@@ -2,85 +2,74 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        utils:
-            param:
-                any:
-                    - kind: required_parameter
-                    - kind: optional_parameter
-        rule:
-            any:
-                - all:
-                      - any:
-                            - kind: function_declaration
-                            - kind: method_definition
-                            - kind: function_expression
-                            - kind: arrow_function
-                      - regex: '^(?:[^\n]*\n){60}'
-                - kind: formal_parameters
-                  has:
-                      matches: param
-                      follows:
-                          matches: param
-                          stopBy: end
-                          follows:
-                              matches: param
-                              stopBy: end
-                              follows:
-                                  matches: param
-                                  stopBy: end
-                                  follows:
-                                      matches: param
-                                      stopBy: end
-                                      follows:
-                                          matches: param
-                                          stopBy: end
-    go:
-        utils:
-            param:
-                kind: parameter_declaration
-        rule:
-            any:
-                - all:
-                      - any:
-                            - kind: function_declaration
-                            - kind: method_declaration
-                            - kind: func_literal
-                      - regex: '^(?:[^\n]*\n){60}'
-                - kind: parameter_list
-                  not:
-                      follows:
-                          kind: parameter_list
-                  has:
-                      matches: param
-                      follows:
-                          matches: param
-                          stopBy: end
-                          follows:
-                              matches: param
-                              stopBy: end
-                              follows:
-                                  matches: param
-                                  stopBy: end
-                                  follows:
-                                      matches: param
-                                      stopBy: end
-                                      follows:
-                                          matches: param
-                                          stopBy: end
+  ts:
+    utils:
+      param:
+        any:
+          - kind: required_parameter
+          - kind: optional_parameter
+    rule:
+      kind: formal_parameters
+      has:
+        matches: param
+        follows:
+          matches: param
+          stopBy: end
+          follows:
+            matches: param
+            stopBy: end
+            follows:
+              matches: param
+              stopBy: end
+              follows:
+                matches: param
+                stopBy: end
+                follows:
+                  matches: param
+                  stopBy: end
+  go:
+    utils:
+      param:
+        kind: parameter_declaration
+    rule:
+      kind: parameter_list
+      not:
+        follows:
+          kind: parameter_list
+      has:
+        matches: param
+        follows:
+          matches: param
+          stopBy: end
+          follows:
+            matches: param
+            stopBy: end
+            follows:
+              matches: param
+              stopBy: end
+              follows:
+                matches: param
+                stopBy: end
+                follows:
+                  matches: param
+                  stopBy: end
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+guide:
+  - go.function-boundaries
+  - ts.philosophy
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why
 
-A function with six or more parameters or more than sixty lines is doing several jobs, and each new requirement makes it longer and its call sites more fragile, since positional arguments are easy to swap and impossible to read. Group related parameters into a typed options object or struct, and split the body along the steps it already performs. The pieces get names, tests, and a chance of being reused.
+A function with six or more parameters is doing several jobs, and each new requirement adds another positional argument that is easy to swap and impossible to read at the call site. Group related parameters into a typed options object or struct so every value is named where it is passed and optional ones can be omitted. Length alone is not the signal: extract a function when its name explains a step or establishes a useful boundary, not to satisfy a line count.
 
 ## Message
 
-function is too wide: more than 5 parameters or over 60 lines; group parameters into a struct and split the body
+function takes more than 5 parameters; group them into an options object or struct
 
 ## Bad
 

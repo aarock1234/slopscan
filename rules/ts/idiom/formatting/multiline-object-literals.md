@@ -2,15 +2,17 @@
 severity: info
 detect: ast
 ignore:
-    - "**/*.test.ts"
-    - "**/*.test.tsx"
-    - "**/*.spec.ts"
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
 ast:
-    rule:
-        kind: object
-        has:
-            nthChild: 2
-        regex: '^[^\n]*$'
+  rule:
+    kind: object
+    has:
+      nthChild: 2
+    regex: '^[^\n]*$'
+guide:
+  - ts.object-literals
 ---
 
 ## Why

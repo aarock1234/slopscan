@@ -2,9 +2,11 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: import_declaration
-        regex: '\n[ \t]*([^_\s][^\n]*)?"[^"\n]*"[ \t]*(//[^\n]*)?\n[ \t]*_[ \t]+"'
+  rule:
+    kind: import_declaration
+    regex: '\n[ \t]*([^_\s][^\n]*)?"[^"\n]*"[ \t]*(//[^\n]*)?\n[ \t]*_[ \t]+"'
+guide:
+  - go.import-order
 ---
 
 ## Why

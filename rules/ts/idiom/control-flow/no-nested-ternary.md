@@ -2,13 +2,15 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: ternary_expression
-        inside:
-            kind: ternary_expression
-            stopBy:
-                not:
-                    kind: parenthesized_expression
+  rule:
+    kind: ternary_expression
+    inside:
+      kind: ternary_expression
+      stopBy:
+        not:
+          kind: parenthesized_expression
+guide:
+  - ts.ternaries
 ---
 
 ## Why

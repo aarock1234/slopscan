@@ -7,15 +7,20 @@ falsePositives:
     matching Stop
   - a goroutine that reports through a channel the caller reads
   - >-
-    fire-and-forget by design with the error handled and logged inside the
-    goroutine
+    a goroutine whose cancellation and join are owned elsewhere and documented,
+    such as a worker counted by a WaitGroup or errgroup that Stop or shutdown
+    waits on, even when it logs its own errors
+guide:
+  - go.concurrency
+  - go.errgroup
+  - go.worker-pool
 jev:
   threshold: 0.5
 ---
 
 ## Why
 
-A bare `go f()` in a request path has no one waiting for it, so its errors vanish, its panics take the process down, and the function returns before the work is done. Bound the goroutines with an `errgroup` or a `sync.WaitGroup`, propagate the first error, and let the context cancel the rest.
+A bare `go f()` in a request path has no one waiting for it, so its errors vanish, its panics take the process down, and the function returns before the work is done. Bound the goroutines with an `errgroup` or a `sync.WaitGroup`, propagate the first error, and let the context cancel the rest. Logging errors inside the goroutine does not make it fire-and-forget by design: every goroutine still needs someone who starts it, something that ends it, and someone who waits for it, and cancellation alone is a request to stop, not a join.
 
 ## Message
 

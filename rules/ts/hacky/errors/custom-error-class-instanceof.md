@@ -2,16 +2,18 @@
 severity: minor
 detect: ast
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
 ast:
-    rule:
-        any:
-            - pattern: $E.message === $S
-            - pattern: $E.message == $S
-            - pattern: $E.message.includes($$$ARGS)
-            - pattern: $E.message.startsWith($$$ARGS)
-            - pattern: $E.message.match($$$ARGS)
+  rule:
+    any:
+      - pattern: $E.message === $S
+      - pattern: $E.message == $S
+      - pattern: $E.message.includes($$$ARGS)
+      - pattern: $E.message.startsWith($$$ARGS)
+      - pattern: $E.message.match($$$ARGS)
+guide:
+  - ts.error-classes
 ---
 
 ## Why

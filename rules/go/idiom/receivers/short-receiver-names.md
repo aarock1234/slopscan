@@ -2,19 +2,21 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: parameter_declaration
-        all:
-            - inside:
-                  kind: parameter_list
-                  inside:
-                      kind: method_declaration
-                      field: receiver
-            - has:
-                  field: name
-                  regex: '^[a-zA-Z_]\w{2,}$'
-                  not:
-                      regex: '^(this|self)$'
+  rule:
+    kind: parameter_declaration
+    all:
+      - inside:
+          kind: parameter_list
+          inside:
+            kind: method_declaration
+            field: receiver
+      - has:
+          field: name
+          regex: '^[a-zA-Z_]\w{2,}$'
+          not:
+            regex: ^(this|self)$
+guide:
+  - go.receiver-names
 ---
 
 ## Why

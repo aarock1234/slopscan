@@ -25,6 +25,8 @@ falsePositives:
     are referenced by name only in data
 jev:
   threshold: 0.72
+guide:
+  - ts.smallest-model
 ---
 
 ## Why

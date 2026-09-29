@@ -2,38 +2,41 @@
 severity: minor
 detect: ast
 ast:
-    rule:
+  rule:
+    any:
+      - kind: identifier
         any:
-            - kind: identifier
-              any:
-                  - inside:
-                        kind: var_spec
-                  - inside:
-                        kind: const_spec
-                  - inside:
-                        kind: parameter_declaration
-                  - inside:
-                        kind: function_declaration
-                        field: name
-                  - inside:
-                        kind: expression_list
-                        inside:
-                            kind: short_var_declaration
-                            field: left
-            - kind: field_identifier
-              any:
-                  - inside:
-                        kind: field_declaration
-                  - inside:
-                        kind: method_declaration
-                        field: name
-                  - inside:
-                        kind: method_elem
-            - kind: type_identifier
+          - inside:
+              kind: var_spec
+          - inside:
+              kind: const_spec
+          - inside:
+              kind: parameter_declaration
+          - inside:
+              kind: function_declaration
+              field: name
+          - inside:
+              kind: expression_list
               inside:
-                  kind: type_spec
-                  field: name
-        regex: '(Id|Http|Https|Url|Uri|Json|Api|Sql|Uuid|Xml|Html|Grpc|Tls|Tcp|Udp|Ip|Db|Cpu|Ttl)([A-Z]|$)'
+                kind: short_var_declaration
+                field: left
+      - kind: field_identifier
+        any:
+          - inside:
+              kind: field_declaration
+          - inside:
+              kind: method_declaration
+              field: name
+          - inside:
+              kind: method_elem
+      - kind: type_identifier
+        inside:
+          kind: type_spec
+          field: name
+    regex: >-
+      (Id|Http|Https|Url|Uri|Json|Api|Sql|Uuid|Xml|Html|Grpc|Tls|Tcp|Udp|Ip|Db|Cpu|Ttl)([A-Z]|$)
+guide:
+  - go.naming
 ---
 
 ## Why

@@ -7,17 +7,19 @@ falsePositives:
     receivers
   - a type that is deliberately copied on every call and documented as such
   - 'methods on named map, slice, or channel types'
+guide:
+  - go.receivers
 jev:
   threshold: 0.5
 ---
 
 ## Why
 
-A value receiver works on a copy, so a method that assigns to a field on a value receiver silently changes nothing, and a large struct is copied on every call. Use a pointer receiver when the method mutates state or the struct is large; use a value receiver for small immutable types such as a string enum with a `String` method.
+A value receiver works on a copy, so a method that assigns to a field on a value receiver silently changes nothing, and a large struct is copied on every call. Use a pointer receiver when the method mutates state, the struct is large, or the type holds a mutex or another synchronization primitive that must not be copied, however small it is; use a value receiver for small immutable types such as a string enum with a `String` method.
 
 ## Message
 
-receiver kind does not fit the method: mutation or a large struct needs a pointer receiver
+receiver kind does not fit the method: mutation, a large struct, or a sync primitive needs a pointer receiver
 
 ## Bad
 

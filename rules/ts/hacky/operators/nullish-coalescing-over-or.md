@@ -2,20 +2,23 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: binary_expression
-        all:
-            - has:
-                  field: operator
-                  regex: '^\|\|$'
-            - has:
-                  field: right
-                  any:
-                      - kind: string
-                      - kind: number
-                      - kind: object
-                      - kind: array
-                      - kind: template_string
+  rule:
+    kind: binary_expression
+    all:
+      - has:
+          field: operator
+          regex: ^\|\|$
+      - has:
+          field: right
+          any:
+            - kind: string
+            - kind: number
+            - kind: object
+            - kind: array
+            - kind: template_string
+guide:
+  - ts.absence
+  - ts.options
 ---
 
 ## Why

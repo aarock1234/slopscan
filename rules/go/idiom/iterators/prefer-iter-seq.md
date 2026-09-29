@@ -11,6 +11,8 @@ falsePositives:
     error value)
 jev:
   threshold: 0.49
+guide:
+  - go.iterators
 ---
 
 ## Why

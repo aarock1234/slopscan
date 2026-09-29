@@ -13,6 +13,8 @@ falsePositives:
     flat
 jev:
   threshold: 0.48
+guide:
+  - ts.guard-clauses
 ---
 
 ## Why

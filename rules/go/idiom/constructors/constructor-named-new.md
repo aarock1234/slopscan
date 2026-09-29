@@ -12,6 +12,8 @@ falsePositives:
     one
 jev:
   threshold: 0.49
+guide:
+  - go.constructors
 ---
 
 ## Why

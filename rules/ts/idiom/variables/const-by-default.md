@@ -11,6 +11,8 @@ falsePositives:
   - loop counters in a classic `for` statement
 jev:
   threshold: 0.5
+guide:
+  - ts.variables
 ---
 
 ## Why

@@ -2,9 +2,13 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        kind: predefined_type
-        regex: ^any$
+  rule:
+    kind: predefined_type
+    regex: ^any$
+guide:
+  - ts.json-boundaries
+  - ts.type-preferences
+  - ts.typed-values
 ---
 
 ## Why

@@ -9,6 +9,8 @@ falsePositives:
   - the interface is not known to the implementing package
 jev:
   threshold: 0.48
+guide:
+  - go.interface-assertions
 ---
 
 ## Why

@@ -2,22 +2,47 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        pattern: z.enum([$$$VALUES])
+  rule:
+    pattern: 'z.enum([$$$VALUES])'
+    has:
+      stopBy: end
+      kind: string
+      pattern: $LIT
+    inside:
+      kind: program
+      stopBy: end
+      has:
+        stopBy: end
+        kind: as_expression
+        pattern: $OBJ as const
+        has:
+          stopBy: end
+          kind: pair
+          has:
+            field: value
+            pattern: $LIT
+guide:
+  - ts.zod-enums
 ---
 
 ## Why
 
-An inline string array in `z.enum(['pending', 'active'])` is a second copy of values that the code also needs as constants, so adding a variant means finding every literal list and hoping none is missed. Deriving the tuple from a const object keeps one definition that feeds the schema, the type, and every `Status.PENDING` reference. The schema then cannot drift from the constants it validates.
+A string array passed to `z.enum` next to a const object holding the same values is a second copy: adding a variant means finding every literal list and hoping none is missed. Zod v4 accepts the const object directly, `z.enum(Status)`, so one definition feeds the schema, the type, and every `Status.PENDING` reference, and the schema cannot drift from the constants it validates. An inline array is fine when only the schema needs the values and no constant refers to them.
 
 ## Message
 
-`z.enum` with inline string literals; derive the values from a const object
+`z.enum` repeats the values of a const object in this file; pass the const object to `z.enum`
 
 ## Bad
 
 ```ts
-// BAD: the values live only here and cannot be referenced as constants
+const Status = {
+	PENDING: 'pending',
+	ACTIVE: 'active',
+	COMPLETED: 'completed',
+} as const;
+
+// BAD: the same values typed out again, so the schema can drift from the constants
 const statusSchema = z.enum(['pending', 'active', 'completed']);
 ```
 
@@ -32,6 +57,12 @@ const Status = {
 
 type Status = (typeof Status)[keyof typeof Status];
 
-const statusValues = Object.values(Status) as [Status, ...Status[]];
-const statusSchema = z.enum(statusValues);
+const statusSchema = z.enum(Status);
+```
+
+```ts
+// only the schema needs these values
+const sortSchema = z.object({
+	direction: z.enum(['asc', 'desc']),
+});
 ```

@@ -2,19 +2,21 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        any:
-            - kind: if_statement
-              not:
-                  has:
-                      field: consequence
-                      kind: statement_block
-            - kind: else_clause
-              not:
-                  has:
-                      any:
-                          - kind: statement_block
-                          - kind: if_statement
+  rule:
+    any:
+      - kind: if_statement
+        not:
+          has:
+            field: consequence
+            kind: statement_block
+      - kind: else_clause
+        not:
+          has:
+            any:
+              - kind: statement_block
+              - kind: if_statement
+guide:
+  - ts.guard-clauses
 ---
 
 ## Why

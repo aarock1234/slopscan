@@ -5,10 +5,16 @@ falsePositives:
   - >-
     values that come from an external API, database column, or library that
     itself uses `null`, where mirroring it is the honest type
+  - >-
+    a repository or data-access method that returns `Promise<User | null>`
+    because the driver or ORM reports a missing row as `null`, so the type is
+    honest about its source
   - React state initialized with `null` to mean not yet loaded or no selection
   - 'optional properties declared with `?`, which are `undefined` by definition'
+guide:
+  - ts.absence
 jev:
-  threshold: 0.5
+  threshold: 0.49
 ---
 
 ## Why

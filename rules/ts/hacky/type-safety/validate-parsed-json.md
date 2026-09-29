@@ -2,14 +2,17 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        any:
-            - pattern: JSON.parse($$$ARGS) as $T
-            - pattern: 'const $X: $T = JSON.parse($$$ARGS)'
-    constraints:
-        T:
-            not:
-                regex: '^unknown$'
+  rule:
+    any:
+      - pattern: JSON.parse($$$ARGS) as $T
+      - pattern: 'const $X: $T = JSON.parse($$$ARGS)'
+  constraints:
+    T:
+      not:
+        regex: ^unknown$
+guide:
+  - ts.boundary-and-domain-contracts
+  - ts.json-boundaries
 ---
 
 ## Why

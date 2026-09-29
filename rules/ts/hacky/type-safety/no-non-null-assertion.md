@@ -2,11 +2,14 @@
 severity: major
 detect: ast
 ignore:
-    - '**/*.test.ts'
-    - '**/*.test.tsx'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
 ast:
-    rule:
-        kind: non_null_expression
+  rule:
+    kind: non_null_expression
+guide:
+  - ts.indexed-access
+  - ts.non-null-assertions
 ---
 
 ## Why

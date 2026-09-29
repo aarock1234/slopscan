@@ -11,6 +11,8 @@ falsePositives:
     method covers logs
 jev:
   threshold: 0.5
+guide:
+  - go.constants
 ---
 
 ## Why

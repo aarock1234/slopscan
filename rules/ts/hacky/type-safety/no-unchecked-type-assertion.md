@@ -14,6 +14,10 @@ falsePositives:
     inventing it
 jev:
   threshold: 0.5
+guide:
+  - ts.boundary-and-domain-contracts
+  - ts.branded-types
+  - ts.type-guards
 ---
 
 ## Why

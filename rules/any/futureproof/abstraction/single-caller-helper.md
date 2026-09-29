@@ -11,6 +11,9 @@ falsePositives:
   - 'exported functions, which may have callers outside this repository'
 jev:
   threshold: 0.46
+guide:
+  - go.function-boundaries
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why

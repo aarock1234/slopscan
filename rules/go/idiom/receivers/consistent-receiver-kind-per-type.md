@@ -8,6 +8,8 @@ falsePositives:
     value type, with a comment saying so
 jev:
   threshold: 0.5
+guide:
+  - go.receivers
 ---
 
 ## Why

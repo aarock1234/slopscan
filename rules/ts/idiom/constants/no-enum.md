@@ -2,8 +2,10 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: enum_declaration
+  rule:
+    kind: enum_declaration
+guide:
+  - ts.constants
 ---
 
 ## Why

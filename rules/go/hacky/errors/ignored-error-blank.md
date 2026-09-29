@@ -2,24 +2,27 @@
 severity: major
 detect: ast
 ignore:
-    - "**/*_test.go"
+  - '**/*_test.go'
 ast:
-    rule:
-        any:
-            - kind: short_var_declaration
-            - kind: assignment_statement
-        has:
-            field: left
-            regex: '(^|,\s*)_$'
-        all:
-            - has:
-                  field: right
-                  has:
-                      kind: call_expression
-                      not:
-                          has:
-                              field: function
-                              regex: '(\.Close|\.Load|\.LoadOrStore)$|^fmt\.Fprint|^os\.LookupEnv$'
+  rule:
+    any:
+      - kind: short_var_declaration
+      - kind: assignment_statement
+    has:
+      field: left
+      regex: '(^|,\s*)_$'
+    all:
+      - has:
+          field: right
+          has:
+            kind: call_expression
+            not:
+              has:
+                field: function
+                regex: (\.Close|\.Load|\.LoadOrStore)$|^fmt\.Fprint|^os\.LookupEnv$
+guide:
+  - go.close-errors
+  - go.error-propagation
 ---
 
 ## Why

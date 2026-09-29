@@ -2,8 +2,10 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: variable_declaration
+  rule:
+    kind: variable_declaration
+guide:
+  - ts.variables
 ---
 
 ## Why

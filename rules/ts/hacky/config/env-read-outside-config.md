@@ -2,21 +2,24 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        any:
-            - pattern: process.env.$NAME
-            - pattern: process.env[$NAME]
-            - pattern: import.meta.env.$NAME
+  rule:
+    any:
+      - pattern: process.env.$NAME
+      - pattern: 'process.env[$NAME]'
+      - pattern: import.meta.env.$NAME
 ignore:
-    - '**/config/**'
-    - '**/config.ts'
-    - '**/env.ts'
-    - '**/env/**'
-    - '**/*.config.ts'
-    - '**/*.config.mts'
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/scripts/**'
+  - '**/config/**'
+  - '**/config.ts'
+  - '**/env.ts'
+  - '**/env/**'
+  - '**/*.config.ts'
+  - '**/*.config.mts'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/scripts/**'
+guide:
+  - ts.boundary-and-domain-contracts
+  - ts.project-structure
 ---
 
 ## Why

@@ -2,14 +2,16 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: binary_expression
-        regex: '(==|!=)'
-        has:
-            any:
-                - kind: identifier
-                - kind: selector_expression
-            regex: '(^|\.)Err[A-Z]\w*$'
+  rule:
+    kind: binary_expression
+    regex: (==|!=)
+    has:
+      any:
+        - kind: identifier
+        - kind: selector_expression
+      regex: '(^|\.)Err[A-Z]\w*$'
+guide:
+  - go.sentinel-errors
 ---
 
 ## Why

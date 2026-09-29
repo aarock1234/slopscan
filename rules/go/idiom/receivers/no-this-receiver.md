@@ -2,13 +2,15 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: parameter_declaration
-        regex: '^(this|self)\b'
-        inside:
-            kind: parameter_list
-            inside:
-                kind: method_declaration
+  rule:
+    kind: parameter_declaration
+    regex: ^(this|self)\b
+    inside:
+      kind: parameter_list
+      inside:
+        kind: method_declaration
+guide:
+  - go.receiver-names
 ---
 
 ## Why

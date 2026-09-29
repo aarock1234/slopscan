@@ -11,6 +11,8 @@ falsePositives:
   - a type that is unexported and only constructed in one place
 jev:
   threshold: 0.51
+guide:
+  - go.zero-values
 ---
 
 ## Why

@@ -14,6 +14,8 @@ falsePositives:
     objects, arrays, promises of non-booleans, or nothing
 jev:
   threshold: 0.48
+guide:
+  - ts.naming
 ---
 
 ## Why

@@ -15,6 +15,9 @@ falsePositives:
     than a closed set of states
 jev:
   threshold: 0.5
+guide:
+  - go.constants
+  - ts.constants
 ---
 
 ## Why

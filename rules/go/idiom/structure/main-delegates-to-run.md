@@ -7,6 +7,9 @@ falsePositives:
   - a main that only parses flags and calls one function
 jev:
   threshold: 0.47
+guide:
+  - go.dependency-wiring
+  - go.shutdown
 ---
 
 ## Why

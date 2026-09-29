@@ -13,6 +13,8 @@ falsePositives:
   - a prompt version identifier or a schema field description kept in code
 jev:
   threshold: 0.5
+guide:
+  - ts.prompt-files
 ---
 
 ## Why

@@ -2,28 +2,32 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        rule:
-            any:
-                - pattern: console.log($$$ARGS)
-                - pattern: console.debug($$$ARGS)
-                - pattern: console.dir($$$ARGS)
-                - pattern: console.table($$$ARGS)
-    go:
-        rule:
-            kind: call_expression
-            has:
-                field: function
-                regex: '^(fmt\.Print(ln|f)?|println|print)$'
+  ts:
+    rule:
+      any:
+        - pattern: console.log($$$ARGS)
+        - pattern: console.debug($$$ARGS)
+        - pattern: console.dir($$$ARGS)
+        - pattern: console.table($$$ARGS)
+  go:
+    rule:
+      kind: call_expression
+      has:
+        field: function
+        regex: ^(fmt\.Print(ln|f)?|println|print)$
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/cli.ts'
-    - '**/scripts/**'
-    - '**/bin/**'
-    - '**/main.go'
-    - '**/cmd/**'
-    - '**/*_test.go'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/cli.ts'
+  - '**/scripts/**'
+  - '**/bin/**'
+  - '**/main.go'
+  - '**/cmd/**'
+  - '**/*_test.go'
+guide:
+  - go.logging
+  - ts.logging
+  - ts.options
 ---
 
 ## Why

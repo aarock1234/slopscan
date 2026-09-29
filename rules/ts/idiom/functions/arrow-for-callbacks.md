@@ -2,14 +2,16 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: function_expression
-        inside:
-            kind: arguments
-        not:
-            has:
-                kind: this
-                stopBy: end
+  rule:
+    kind: function_expression
+    inside:
+      kind: arguments
+    not:
+      has:
+        kind: this
+        stopBy: end
+guide:
+  - ts.function-declarations
 ---
 
 ## Why

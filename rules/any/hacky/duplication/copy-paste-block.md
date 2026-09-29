@@ -16,6 +16,9 @@ falsePositives:
     expected to diverge, when the code says so
 jev:
   threshold: 0.5
+guide:
+  - go.function-boundaries
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why

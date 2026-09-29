@@ -2,11 +2,13 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        pattern: 'const $NAME: Record<$K, $V> = $OBJ'
-    constraints:
-        OBJ:
-            kind: object
+  rule:
+    pattern: 'const $NAME: Record<$K, $V> = $OBJ'
+  constraints:
+    OBJ:
+      kind: object
+guide:
+  - ts.satisfies
 ---
 
 ## Why

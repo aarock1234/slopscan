@@ -2,12 +2,14 @@
 severity: minor
 detect: ast
 ignore:
-    - '**/*.config.ts'
-    - '**/app/**'
-    - '**/pages/**'
+  - '**/*.config.ts'
+  - '**/app/**'
+  - '**/pages/**'
 ast:
-    rule:
-        pattern: export default $X
+  rule:
+    pattern: export default $X
+guide:
+  - ts.exports
 ---
 
 ## Why

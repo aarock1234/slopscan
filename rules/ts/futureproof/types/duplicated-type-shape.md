@@ -17,6 +17,10 @@ falsePositives:
   - a type inferred from a schema with z.infer
 jev:
   threshold: 0.72
+guide:
+  - ts.boundary-and-domain-contracts
+  - ts.one-definition
+  - ts.schema-first
 ---
 
 ## Why

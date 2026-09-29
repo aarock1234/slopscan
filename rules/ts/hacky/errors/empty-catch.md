@@ -2,11 +2,13 @@
 severity: critical
 detect: ast
 ast:
-    rule:
-        kind: catch_clause
-        has:
-            kind: statement_block
-            regex: '^\{\s*\}$'
+  rule:
+    kind: catch_clause
+    has:
+      kind: statement_block
+      regex: '^\{\s*\}$'
+guide:
+  - ts.error-propagation
 ---
 
 ## Why

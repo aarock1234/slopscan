@@ -12,6 +12,8 @@ falsePositives:
     type says so with its own variant
 jev:
   threshold: 0.47
+guide:
+  - ts.legal-states
 ---
 
 ## Why

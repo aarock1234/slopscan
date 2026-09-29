@@ -13,6 +13,10 @@ falsePositives:
     schema merely mirrors
 jev:
   threshold: 0.5
+guide:
+  - ts.one-definition
+  - ts.schema-first
+  - ts.zod
 ---
 
 ## Why

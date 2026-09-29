@@ -5,8 +5,13 @@ falsePositives:
   - a name that only coincidentally shares a prefix with the package
   - exported names in package main
   - a name that would become a keyword or ambiguous when the prefix is dropped
+  - >-
+    a type named exactly as its package because it is the package's one primary
+    type, such as client.Client or time.Time
+guide:
+  - go.package-names
 jev:
-  threshold: 0.44
+  threshold: 0.47
 ---
 
 ## Why

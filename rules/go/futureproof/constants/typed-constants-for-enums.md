@@ -9,13 +9,15 @@ falsePositives:
   - >-
     values only ever used as map keys or labels, never as a parameter or field
     type
+guide:
+  - go.constants
 jev:
   threshold: 0.5
 ---
 
 ## Why
 
-A set of untyped string or int constants that stand for the states of one thing is an enum without a type, so any string is accepted where a status is expected and a typo compiles. Declare a named type and make the constants that type; the compiler then rejects a raw value and a `String` or `MarshalText` method has a type to hang on.
+A set of untyped string or int constants that stand for the states of one thing is an enum without a type, so any string is accepted where a status is expected and a typo compiles. Declare a named type and make the constants that type: a `Status` parameter then says what it accepts, and a `String` or `MarshalText` method has a type to hang on. The type does not constrain values, since `Transition("pendng")` still compiles through untyped-constant conversion and `Status(raw)` accepts anything, so validate external values in a parsing function at the boundary and return an error for unknown ones.
 
 ## Message
 

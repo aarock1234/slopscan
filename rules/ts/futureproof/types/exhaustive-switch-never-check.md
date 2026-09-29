@@ -13,6 +13,8 @@ falsePositives:
     behavior for everything else
 jev:
   threshold: 0.49
+guide:
+  - ts.exhaustive-switch
 ---
 
 ## Why

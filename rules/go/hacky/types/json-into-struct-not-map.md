@@ -11,6 +11,8 @@ falsePositives:
   - pass-through data that is never read by field name
 jev:
   threshold: 0.5
+guide:
+  - go.json-boundaries
 ---
 
 ## Why

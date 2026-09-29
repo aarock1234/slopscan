@@ -11,6 +11,11 @@ falsePositives:
   - >-
     the error is returned from a top-level run function where nothing above will
     log it
+  - >-
+    a batch or worker loop that logs each item's failure and returns a distinct
+    summary such as ctx.Err() or a failure count, as a documented policy
+guide:
+  - go.error-propagation
 jev:
   threshold: 0.5
 ---

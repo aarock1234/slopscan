@@ -11,6 +11,8 @@ falsePositives:
     inline `type` modifier
 jev:
   threshold: 0.31
+guide:
+  - ts.exports
 ---
 
 ## Why

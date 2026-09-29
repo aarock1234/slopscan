@@ -9,6 +9,8 @@ falsePositives:
   - functions that already declare `value is T` or `asserts value is T`
 jev:
   threshold: 0.5
+guide:
+  - ts.type-guards
 ---
 
 ## Why

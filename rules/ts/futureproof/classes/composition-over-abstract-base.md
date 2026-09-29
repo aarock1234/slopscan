@@ -13,6 +13,8 @@ falsePositives:
     abstract method they implement
 jev:
   threshold: 0.56
+guide:
+  - ts.abstract-classes
 ---
 
 ## Why

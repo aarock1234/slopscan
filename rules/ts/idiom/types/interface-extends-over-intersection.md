@@ -3,6 +3,10 @@ severity: info
 detect: judge
 falsePositives:
   - >-
+    a single-level extension of one named shape, such as `type Admin = User & {
+    role: 'admin' }`, which stays readable and is not what the guide's
+    performance note is about
+  - >-
     intersections in generic constraints such as `T extends Identifiable &
     Timestamped`
   - 'branded types of the form `T & { readonly __brand: B }`'
@@ -10,23 +14,27 @@ falsePositives:
   - >-
     an intersection of two object literals that is used once and never extended
     again
+guide:
+  - ts.interface-or-type
 jev:
   threshold: 0.5
 ---
 
 ## Why
 
-Extending a named object shape with `type Admin = User & { role: 'admin' }` is checked lazily on every use, and when two members conflict the intersection silently becomes `never` for that property instead of an error at the declaration. `interface Admin extends User` is checked once, rejects conflicting members where they are declared, and gives shorter error messages that name the interface rather than expanding the whole intersection. Intersections are for unions, brands, and generic constraints.
+For a complex object-extension hierarchy, several named shapes each layered on the last, `interface extends` gives clearer diagnostics and better checker behavior than stacked intersections: it is checked once, rejects conflicting members where they are declared, and its error messages name the interface instead of expanding the whole intersection. Keep simple types readable and investigate actual checker bottlenecks before rewriting an established model; a single `User & { role: 'admin' }` is fine. Intersections are for unions, brands, and generic constraints.
 
 ## Message
 
-object shape extended with an intersection; use `interface extends`
+multi-level object hierarchy built from intersections; use `interface extends`
 
 ## Bad
 
 ```ts
-// BAD: extending a named object shape through an intersection
-type Admin = User & {
+// BAD: three levels of named shapes stacked as intersections
+type Entity = { id: string } & Timestamped;
+type Account = Entity & { email: string } & Auditable;
+type Admin = Account & {
 	role: 'admin';
 	permissions: readonly string[];
 };
@@ -35,10 +43,24 @@ type Admin = User & {
 ## Good
 
 ```ts
-interface Admin extends User {
+interface Entity extends Timestamped {
+	id: string;
+}
+
+interface Account extends Entity, Auditable {
+	email: string;
+}
+
+interface Admin extends Account {
 	role: 'admin';
 	permissions: readonly string[];
 }
+```
+
+```ts
+type Admin = User & {
+	role: 'admin';
+};
 ```
 
 ```ts

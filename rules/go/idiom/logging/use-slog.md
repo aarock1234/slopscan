@@ -2,15 +2,17 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: call_expression
-        has:
-            field: function
-            regex: '^(log|fmt)\.Print(f|ln)?$'
+  rule:
+    kind: call_expression
+    has:
+      field: function
+      regex: ^(log|fmt)\.Print(f|ln)?$
 ignore:
-    - '**/main.go'
-    - '**/cmd/**'
-    - '**/*_test.go'
+  - '**/main.go'
+  - '**/cmd/**'
+  - '**/*_test.go'
+guide:
+  - go.logging
 ---
 
 ## Why

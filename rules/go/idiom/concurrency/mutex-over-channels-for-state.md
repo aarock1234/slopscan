@@ -9,6 +9,8 @@ falsePositives:
   - an actor loop that owns the state by design and is documented as such
 jev:
   threshold: 0.5
+guide:
+  - go.concurrency
 ---
 
 ## Why

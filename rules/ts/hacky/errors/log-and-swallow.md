@@ -2,11 +2,14 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        kind: catch_clause
-        has:
-            kind: statement_block
-            regex: '^\{\s*(?:(?:console|log|logger|this\.logger|this\.log)\.\w+\([^;]*\);?\s*)+\}$'
+  rule:
+    kind: catch_clause
+    has:
+      kind: statement_block
+      regex: >-
+        ^\{\s*(?:(?:console|log|logger|this\.logger|this\.log)\.\w+\([^;]*\);?\s*)+\}$
+guide:
+  - ts.error-propagation
 ---
 
 ## Why
@@ -36,7 +39,7 @@ async function saveDraft(draft: Draft): Promise<void> {
 		await repo.save(draft);
 		// BAD: a structured logger does not change what the caller sees
 	} catch (error) {
-		logger.error({ error, draftId: draft.id }, 'failed to save draft');
+		logger.error({ err: error, draftId: draft.id }, 'failed to save draft');
 	}
 }
 ```
@@ -59,7 +62,7 @@ async function warmCache(): Promise<void> {
 		await cache.preload();
 	} catch (error) {
 		// a cold cache only costs latency, and the request path fills it on demand
-		logger.warn({ error }, 'cache preload failed, continuing cold');
+		logger.warn({ err: error }, 'cache preload failed, continuing cold');
 	}
 }
 ```

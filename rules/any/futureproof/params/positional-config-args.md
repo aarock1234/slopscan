@@ -2,59 +2,64 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        utils:
-            param:
-                any:
-                    - kind: required_parameter
-                    - kind: optional_parameter
-        rule:
-            kind: formal_parameters
-            inside:
-                kind: method_definition
-                has:
-                    field: name
-                    regex: '^constructor$'
-            has:
-                matches: param
-                follows:
-                    matches: param
-                    stopBy: end
-                    follows:
-                        matches: param
-                        stopBy: end
-                        follows:
-                            matches: param
-                            stopBy: end
-    go:
-        utils:
-            param:
-                kind: parameter_declaration
-        rule:
-            kind: parameter_list
-            not:
-                follows:
-                    kind: parameter_list
-            inside:
-                kind: function_declaration
-                has:
-                    field: name
-                    regex: '^(New|Must)[A-Z]?'
-            has:
-                matches: param
-                follows:
-                    matches: param
-                    stopBy: end
-                    follows:
-                        matches: param
-                        stopBy: end
-                        follows:
-                            matches: param
-                            stopBy: end
+  ts:
+    utils:
+      param:
+        any:
+          - kind: required_parameter
+          - kind: optional_parameter
+    rule:
+      kind: formal_parameters
+      inside:
+        kind: method_definition
+        has:
+          field: name
+          regex: ^constructor$
+      has:
+        matches: param
+        follows:
+          matches: param
+          stopBy: end
+          follows:
+            matches: param
+            stopBy: end
+            follows:
+              matches: param
+              stopBy: end
+  go:
+    utils:
+      param:
+        kind: parameter_declaration
+    rule:
+      kind: parameter_list
+      not:
+        follows:
+          kind: parameter_list
+      inside:
+        kind: function_declaration
+        has:
+          field: name
+          regex: '^(New|Must)[A-Z]?'
+      has:
+        matches: param
+        follows:
+          matches: param
+          stopBy: end
+          follows:
+            matches: param
+            stopBy: end
+            follows:
+              matches: param
+              stopBy: end
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+guide:
+  - go.function-boundaries
+  - go.functional-options
+  - ts.options
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why

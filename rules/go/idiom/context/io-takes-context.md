@@ -13,6 +13,8 @@ falsePositives:
   - test helpers
 jev:
   threshold: 0.5
+guide:
+  - go.context
 ---
 
 ## Why

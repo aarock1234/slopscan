@@ -2,8 +2,11 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        pattern: z.nativeEnum($X)
+  rule:
+    pattern: z.nativeEnum($X)
+guide:
+  - ts.zod
+  - ts.zod-enums
 ---
 
 ## Why

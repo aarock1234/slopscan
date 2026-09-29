@@ -8,13 +8,21 @@ falsePositives:
   - a single guard clause such as checking authentication before delegating
   - 'a small script, example, or prototype with no service layer at all'
   - 'middleware, which operates on the request itself rather than on domain state'
+  - >-
+    a short bounded request that makes a few independent calls and returns,
+    which does not automatically need a queue or workflow
+guide:
+  - go.function-boundaries
+  - go.layers
+  - ts.durable-work
+  - ts.layers
 jev:
-  threshold: 0.51
+  threshold: 0.49
 ---
 
 ## Why
 
-Business rules written inside an HTTP handler can only be reached through HTTP, so they cannot be reused by a CLI, a queue consumer, or a scheduled job, and they can only be tested by spinning up requests. The handler grows with every rule until nobody can see the request handling for the logic. Keep the handler to parsing input, calling one service function, and mapping the result to a response; the rules live in the service where they can be called from anywhere. Expensive work is the worst case: several model or network calls made inside the request, before a durable ID exists, are lost on a restart and give the caller nothing to poll, so the handler should mint the ID and start the workflow that does the work.
+Business rules written inside an HTTP handler can only be reached through HTTP, so they cannot be reused by a CLI, a queue consumer, or a scheduled job, and they can only be tested by spinning up requests. The handler grows with every rule until nobody can see the request handling for the logic. Keep the handler to parsing input, calling one service function, and mapping the result to a response; the rules live in the service where they can be called from anywhere. Long-running or restart-sensitive work is the worst case: minutes of model or network calls made inside the request, before a durable ID exists, are lost on a restart and give the caller nothing to poll, so the handler should mint the ID and start the workflow that does the work. A short bounded request with a few independent calls does not automatically need that handoff; choose the boundary from latency, ownership, cancellation, and restart requirements.
 
 ## Message
 

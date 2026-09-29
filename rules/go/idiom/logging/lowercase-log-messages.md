@@ -2,31 +2,33 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: call_expression
-        any:
-            - all:
-                  - has:
-                        field: function
-                        regex: '\.(Debug|Info|Warn|Error)$'
-                  - has:
-                        field: arguments
-                        has:
-                            kind: interpreted_string_literal
-                            nthChild: 1
-                            regex: '^"[A-Z][a-z]'
-            - all:
-                  - has:
-                        field: function
-                        regex: '\.(Debug|Info|Warn|Error)Context$'
-                  - has:
-                        field: arguments
-                        has:
-                            kind: interpreted_string_literal
-                            nthChild: 2
-                            regex: '^"[A-Z][a-z]'
+  rule:
+    kind: call_expression
+    any:
+      - all:
+          - has:
+              field: function
+              regex: \.(Debug|Info|Warn|Error)$
+          - has:
+              field: arguments
+              has:
+                kind: interpreted_string_literal
+                nthChild: 1
+                regex: '^"[A-Z][a-z]'
+      - all:
+          - has:
+              field: function
+              regex: \.(Debug|Info|Warn|Error)Context$
+          - has:
+              field: arguments
+              has:
+                kind: interpreted_string_literal
+                nthChild: 2
+                regex: '^"[A-Z][a-z]'
 ignore:
-    - '**/*_test.go'
+  - '**/*_test.go'
+guide:
+  - go.logging
 ---
 
 ## Why

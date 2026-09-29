@@ -2,11 +2,13 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: type_assertion_expression
-        has:
-            field: operand
-            regex: '^err$'
+  rule:
+    kind: type_assertion_expression
+    has:
+      field: operand
+      regex: ^err$
+guide:
+  - go.error-types
 ---
 
 ## Why

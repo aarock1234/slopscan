@@ -2,37 +2,32 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        pattern: const $NAME = $VALUE
-        inside:
-            any:
-                - kind: program
-                - kind: export_statement
-    constraints:
-        NAME:
-            regex: '^[a-z][a-zA-Z0-9]*$'
-        VALUE:
-            any:
-                - kind: number
-                - kind: string
-                - kind: 'true'
-                - kind: 'false'
+  rule:
+    pattern: const $NAME = $VALUE
+    inside:
+      kind: export_statement
+  constraints:
+    NAME:
+      regex: '^[a-z][a-zA-Z0-9]*$'
+    VALUE:
+      any:
+        - kind: number
+        - kind: string
+        - kind: 'true'
+        - kind: 'false'
+guide:
+  - ts.naming
 ---
 
 ## Why
 
-A module-level constant holding a literal value is a configuration knob, and SCREAMING_SNAKE_CASE marks it as one at every use site. A camelCase name such as `maxRetries` looks like a local variable, so a reader inside a function cannot tell whether it is a fixed limit or something computed nearby. Local constants stay camelCase; only the module-level literals get the loud name.
+An exported module-level constant holding a literal value is a configuration knob other modules import, and SCREAMING_SNAKE_CASE marks it as one at every use site: `DEFAULT_TIMEOUT` reads as a fixed limit where `defaultTimeout` reads as something computed nearby. The guide's naming table has both a camelCase "Constants" row and a SCREAMING_SNAKE "Module constants" row; this rule enforces only the second, for exported primitives, and leaves an unexported `const maxRetries = 3` and every local constant alone.
 
 ## Message
 
-module-level literal constant is camelCase; use SCREAMING_SNAKE_CASE
+exported literal constant is camelCase; use SCREAMING_SNAKE_CASE
 
 ## Bad
-
-```ts
-// BAD: a fixed module-level limit dressed as a local variable
-const maxRetries = 3;
-```
 
 ```ts
 // BAD: exported literal config in camelCase
@@ -42,12 +37,12 @@ export const defaultTimeout = 10_000;
 ## Good
 
 ```ts
-const MAX_RETRIES = 3;
-
 export const DEFAULT_TIMEOUT = 10_000;
 ```
 
 ```ts
+const maxRetries = 3;
+
 export const userSchema = z.object({
 	id: z.string(),
 });

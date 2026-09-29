@@ -2,23 +2,25 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: parameter_declaration
-        all:
-            - has:
-                  field: type
-                  regex: '^error$'
-            - inside:
-                  kind: parameter_list
-                  inside:
-                      any:
-                          - kind: function_declaration
-                          - kind: method_declaration
-                          - kind: func_literal
-                      field: result
-            - precedes:
-                  kind: parameter_declaration
-                  stopBy: end
+  rule:
+    kind: parameter_declaration
+    all:
+      - has:
+          field: type
+          regex: ^error$
+      - inside:
+          kind: parameter_list
+          inside:
+            any:
+              - kind: function_declaration
+              - kind: method_declaration
+              - kind: func_literal
+            field: result
+      - precedes:
+          kind: parameter_declaration
+          stopBy: end
+guide:
+  - go.error-propagation
 ---
 
 ## Why

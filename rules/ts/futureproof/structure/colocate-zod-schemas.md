@@ -14,6 +14,8 @@ falsePositives:
     same feature directory
 jev:
   threshold: 0.75
+guide:
+  - ts.project-structure
 ---
 
 ## Why

@@ -1,20 +1,25 @@
 ---
 severity: minor
 detect: ast
+ignore:
+  - '**/app/**'
+  - '**/pages/**'
 ast:
-    rule:
-        kind: function_declaration
-        inside:
-            kind: export_statement
-        not:
-            has:
-                field: return_type
-                regex: '.'
+  rule:
+    kind: function_declaration
+    inside:
+      kind: export_statement
+    not:
+      has:
+        field: return_type
+        regex: .
+guide:
+  - ts.return-types
 ---
 
 ## Why
 
-An exported function is a contract, and an inferred return type lets that contract drift silently: a change deep in the body widens or narrows the type and the error surfaces at some distant call site instead of at the definition. Writing the return type pins the contract, produces errors where the change was made, and documents the function without a comment. Internal helpers and callbacks can keep inference where the type is obvious.
+An exported function is a contract, and an inferred return type lets that contract drift silently: a change deep in the body widens or narrows the type and the error surfaces at some distant call site instead of at the definition. Writing the return type pins the contract, produces errors where the change was made, and documents the function without a comment. Internal helpers and callbacks can keep inference where the type is obvious. Framework-managed files under `app/` and `pages/`, whose component signatures the framework owns, are excluded.
 
 ## Message
 

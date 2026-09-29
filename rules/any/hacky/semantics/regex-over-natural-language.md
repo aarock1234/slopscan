@@ -18,6 +18,8 @@ falsePositives:
     commit message prefixes
 jev:
   threshold: 0.51
+guide:
+  - ts.facts-and-prose
 ---
 
 ## Why

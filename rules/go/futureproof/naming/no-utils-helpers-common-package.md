@@ -2,9 +2,11 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: package_identifier
-        regex: '^(utils?|helpers?|common|misc|shared)$'
+  rule:
+    kind: package_identifier
+    regex: ^(utils?|helpers?|common|misc|shared)$
+guide:
+  - go.package-names
 ---
 
 ## Why

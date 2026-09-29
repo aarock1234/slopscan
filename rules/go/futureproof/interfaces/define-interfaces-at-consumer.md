@@ -9,6 +9,9 @@ falsePositives:
   - a package that both defines and consumes the interface
 jev:
   threshold: 0.5
+guide:
+  - go.consumer-interfaces
+  - go.layers
 ---
 
 ## Why

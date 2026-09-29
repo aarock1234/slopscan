@@ -17,6 +17,11 @@ falsePositives:
     implementation arrives in the same change
 jev:
   threshold: 0.64
+guide:
+  - go.consumer-interfaces
+  - go.function-boundaries
+  - ts.abstract-classes
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why

@@ -9,6 +9,8 @@ falsePositives:
   - a name that matches an existing standard library interface
 jev:
   threshold: 0.5
+guide:
+  - go.naming
 ---
 
 ## Why

@@ -5,6 +5,8 @@ falsePositives:
   - a file with a single import or a single group
   - generated code
   - an import block the diff did not touch
+guide:
+  - go.import-order
 ---
 
 ## Why

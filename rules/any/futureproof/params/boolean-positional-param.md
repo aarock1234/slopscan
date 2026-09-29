@@ -2,59 +2,63 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        utils:
-            param:
-                any:
-                    - kind: required_parameter
-                    - kind: optional_parameter
-        rule:
-            matches: param
-            any:
-                - has:
-                      kind: type_annotation
-                      has:
-                          kind: predefined_type
-                          regex: '^boolean$'
-                - all:
-                      - not:
-                            has:
-                                kind: type_annotation
-                      - has:
-                            field: value
-                            any:
-                                - kind: 'true'
-                                - kind: 'false'
-            all:
-                - any:
-                      - follows:
-                            matches: param
-                            stopBy: end
-                      - precedes:
-                            matches: param
-                            stopBy: end
-    go:
-        rule:
-            kind: parameter_declaration
+  ts:
+    utils:
+      param:
+        any:
+          - kind: required_parameter
+          - kind: optional_parameter
+    rule:
+      matches: param
+      any:
+        - has:
+            kind: type_annotation
             has:
-                field: type
-                regex: '^bool$'
-            inside:
-                kind: parameter_list
-                not:
-                    follows:
-                        kind: parameter_list
-            any:
-                - follows:
-                      kind: parameter_declaration
-                      stopBy: end
-                - precedes:
-                      kind: parameter_declaration
-                      stopBy: end
+              kind: predefined_type
+              regex: ^boolean$
+        - all:
+            - not:
+                has:
+                  kind: type_annotation
+            - has:
+                field: value
+                any:
+                  - kind: 'true'
+                  - kind: 'false'
+      all:
+        - any:
+            - follows:
+                matches: param
+                stopBy: end
+            - precedes:
+                matches: param
+                stopBy: end
+  go:
+    rule:
+      kind: parameter_declaration
+      has:
+        field: type
+        regex: ^bool$
+      inside:
+        kind: parameter_list
+        not:
+          follows:
+            kind: parameter_list
+      any:
+        - follows:
+            kind: parameter_declaration
+            stopBy: end
+        - precedes:
+            kind: parameter_declaration
+            stopBy: end
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+guide:
+  - go.function-boundaries
+  - ts.options
+  - ts.readability-and-abstraction-decisions
 ---
 
 ## Why

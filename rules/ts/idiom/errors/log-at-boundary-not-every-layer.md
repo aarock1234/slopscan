@@ -13,6 +13,8 @@ falsePositives:
     rethrowing, without logging
 jev:
   threshold: 0.51
+guide:
+  - ts.error-propagation
 ---
 
 ## Why

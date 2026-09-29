@@ -2,11 +2,13 @@
 severity: major
 detect: ast
 ast:
-    rule:
-        kind: map_type
-        has:
-            field: key
-            regex: '^(any|interface\{\s*\})$'
+  rule:
+    kind: map_type
+    has:
+      field: key
+      regex: '^(any|interface\{\s*\})$'
+guide:
+  - go.type-preferences
 ---
 
 ## Why

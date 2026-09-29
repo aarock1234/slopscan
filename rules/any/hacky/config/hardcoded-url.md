@@ -2,37 +2,39 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        rule:
-            any:
-                - kind: string
-                  regex: '^["'']https?://'
-                - kind: template_string
-                  regex: '^`https?://'
-            not:
-                regex: 'https?://(www\.)?w3\.org|https?://schemas\.|https?://json-schema\.org'
-    go:
-        rule:
-            any:
-                - kind: interpreted_string_literal
-                  regex: '^"https?://'
-                - kind: raw_string_literal
-                  regex: '^`https?://'
-            not:
-                regex: 'https?://(www\.)?w3\.org|https?://schemas\.|https?://json-schema\.org'
+  ts:
+    rule:
+      any:
+        - kind: string
+          regex: '^["'']https?://'
+        - kind: template_string
+          regex: '^`https?://'
+      not:
+        regex: 'https?://(www\.)?w3\.org|https?://schemas\.|https?://json-schema\.org'
+  go:
+    rule:
+      any:
+        - kind: interpreted_string_literal
+          regex: '^"https?://'
+        - kind: raw_string_literal
+          regex: '^`https?://'
+      not:
+        regex: 'https?://(www\.)?w3\.org|https?://schemas\.|https?://json-schema\.org'
 ignore:
-    - '**/config/**'
-    - '**/config.ts'
-    - '**/config.go'
-    - '**/constants.ts'
-    - '**/constants.go'
-    - '**/*.config.ts'
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
-    - '**/testdata/**'
-    - '**/fixtures/**'
-    - '**/__mocks__/**'
+  - '**/config/**'
+  - '**/config.ts'
+  - '**/config.go'
+  - '**/constants.ts'
+  - '**/constants.go'
+  - '**/*.config.ts'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+  - '**/testdata/**'
+  - '**/fixtures/**'
+  - '**/__mocks__/**'
+guide:
+  - go.http-usage
 ---
 
 ## Why

@@ -2,14 +2,16 @@
 severity: minor
 detect: ast
 ast:
-    ts:
-        rule:
-            kind: comment
-            regex: '^//\s*[-=*#]{4,}'
-    go:
-        rule:
-            kind: comment
-            regex: '^//\s*[-=*#]{4,}'
+  ts:
+    rule:
+      kind: comment
+      regex: '^//\s*[-=*#]{4,}'
+  go:
+    rule:
+      kind: comment
+      regex: '^//\s*[-=*#]{4,}'
+guide:
+  - ts.comments
 ---
 
 ## Why

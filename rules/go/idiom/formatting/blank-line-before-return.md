@@ -9,6 +9,8 @@ falsePositives:
   - a one-line function body
 jev:
   threshold: 0.87
+guide:
+  - go.spacing
 ---
 
 ## Why

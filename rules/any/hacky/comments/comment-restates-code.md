@@ -6,6 +6,9 @@ falsePositives:
   - 'comments explaining why, a constraint, or a non-obvious consequence'
 jev:
   threshold: 0.54
+guide:
+  - go.doc-comments
+  - ts.comments
 ---
 
 ## Why

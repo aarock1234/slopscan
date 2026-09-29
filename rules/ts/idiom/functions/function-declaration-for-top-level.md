@@ -2,22 +2,24 @@
 severity: minor
 detect: ast
 ast:
-    rule:
-        kind: lexical_declaration
-        has:
-            kind: variable_declarator
-            has:
-                kind: arrow_function
-                field: value
-        inside:
-            any:
-                - kind: program
-                - kind: export_statement
+  rule:
+    kind: lexical_declaration
+    has:
+      kind: variable_declarator
+      has:
+        kind: arrow_function
+        field: value
+    inside:
+      any:
+        - kind: program
+        - kind: export_statement
+guide:
+  - ts.function-declarations
 ---
 
 ## Why
 
-A top-level function written as `const f = () => {}` is not hoisted, so callers above it in the file break, and it shows up in stack traces and debuggers as an anonymous arrow bound to a variable. A `function` declaration is hoisted, carries its name, and stands out visually as a unit of the module. Arrows are for callbacks and inline expressions, where lexical `this` and brevity actually help.
+A top-level function written as `const f = () => {}` is not hoisted, so callers above it in the file break, and it reads as a variable holding a value rather than as a unit of the module. A `function` declaration is hoisted, stands out visually, and keeps ordinary binding semantics for `this` and `arguments` should a caller ever need them. The preference is about readable structure and binding, not stack traces: an arrow assigned to a named binding gets that name inferred. Arrows are for callbacks and inline expressions, where lexical `this` and brevity actually help.
 
 ## Message
 
@@ -26,7 +28,7 @@ top-level arrow function; use a `function` declaration
 ## Bad
 
 ```ts
-// BAD: exported arrow is not hoisted and is anonymous in stack traces
+// BAD: exported arrow is not hoisted and reads as a variable, not a module function
 export const createUser = async (input: CreateUserInput): Promise<User> => {
 	return repository.insert(input);
 };

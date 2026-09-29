@@ -11,6 +11,8 @@ falsePositives:
   - a sequence deliberately kept serial with a comment explaining why
 jev:
   threshold: 0.52
+guide:
+  - ts.parallel-operations
 ---
 
 ## Why
