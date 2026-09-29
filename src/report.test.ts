@@ -25,6 +25,7 @@ const REPORT: Report = {
 			quote: 'catch {}',
 			message: 'empty catch swallows the error | handle it',
 			confidence: 1,
+			origin: 'ast',
 			axis: 'hacky',
 			severity: 'critical',
 			points: 20,

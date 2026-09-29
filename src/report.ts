@@ -1,15 +1,19 @@
 import pc from 'picocolors';
 import { z } from 'zod';
 
+import { jevSummarySchema } from './analyzers/jev.js';
 import { judgeSummarySchema } from './analyzers/judge.js';
 import { findingSchema } from './finding.js';
 import { axisValues } from './rule.js';
 import { Grade, scoreSchema, scoredSchema } from './score.js';
+import { verifySummarySchema } from './verify.js';
 
 // what one scan produces: the score, its findings, and how it was made
 export const reportSchema = scoredSchema.extend({
 	baseline: scoreSchema.optional(),
 	judge: judgeSummarySchema.optional(),
+	jev: jevSummarySchema.optional(),
+	verifier: verifySummarySchema.optional(),
 	// judge findings that failed their confirm predicate; kept for tuning, hidden from humans
 	rejected: z.array(findingSchema).optional(),
 });
@@ -70,6 +74,10 @@ function renderTerminal(report: Report, color: boolean): string {
 
 	if (report.judge !== undefined) {
 		lines.push(dim(judgeLine(report.judge)));
+	}
+
+	if (report.jev !== undefined) {
+		lines.push(dim(jevLine(report.jev, report.verifier)));
 	}
 
 	lines.push('');
@@ -133,6 +141,16 @@ function renderMarkdown(report: Report): string {
 	lines.push('');
 
 	return lines.join('\n');
+}
+
+// "jev jev-latest: 12 functions, 12 calls, 41k tokens; verifier confirmed 3 of 7"
+function jevLine(jev: NonNullable<Report['jev']>, verifier: Report['verifier']): string {
+	const verified =
+		verifier === undefined
+			? ''
+			: `; verifier ${verifier.model} confirmed ${verifier.confirmed} of ${verifier.checked}`;
+
+	return `jev ${jev.model}: ${jev.units} functions, ${jev.calls} calls, ${jev.inputTokens} in${verified}`;
 }
 
 function judgeLine(judge: NonNullable<Report['judge']>): string {

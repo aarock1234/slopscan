@@ -124,6 +124,7 @@ describe('createJudge', () => {
 				quote: '\t// increment the counter',
 				message: 'the comment repeats the next line',
 				confidence: 0.9,
+				origin: 'judge',
 			},
 		]);
 

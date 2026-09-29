@@ -18,6 +18,15 @@ judge:
     maxOutputTokens: 2000
     timeoutMs: 90000
 
+jev:
+    enabled: true
+    model: jev-latest
+    confidenceFloor: 0.45
+
+verify:
+    enabled: true
+    maxSteps: 6
+
 scoring:
     points:
         info: 1

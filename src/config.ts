@@ -4,9 +4,11 @@ import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
+import { jevConfigSchema } from './analyzers/jev.js';
 import { judgeConfigSchema } from './analyzers/judge.js';
 import { scoringSchema } from './score.js';
 import { ConfigError } from './shared/errors.js';
+import { verifyConfigSchema } from './verify.js';
 
 const CONFIG_FILE = '.slopscan.yml';
 
@@ -31,6 +33,8 @@ export const configSchema = z
 		failThreshold: z.number().min(0).max(100).default(45),
 		scoring: scoringSchema.prefault({}),
 		judge: judgeConfigSchema.prefault({}),
+		jev: jevConfigSchema.prefault({}),
+		verify: verifyConfigSchema.prefault({}),
 	})
 	.strict()
 	.transform(config => ({

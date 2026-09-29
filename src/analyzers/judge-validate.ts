@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { Change } from '../change.js';
+import { Origin } from '../finding.js';
 import type { Finding } from '../finding.js';
 import type { JudgeRule } from '../rule.js';
 
@@ -62,6 +63,7 @@ export function validateFindings(
 			quote: lines.slice(line - 1, line - 1 + quoteLines).join('\n'),
 			message: candidate.message.trim() || rule.message,
 			confidence: candidate.confidence,
+			origin: Origin.JUDGE,
 			...(symbol && { symbol }),
 		};
 

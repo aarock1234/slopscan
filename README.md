@@ -21,14 +21,18 @@ Five nouns, one pipeline.
 | ---------- | ---------------------------------------------------------------------------- |
 | `Rule`     | one markdown file under `rules/` with a why, bad examples, and good examples |
 | `Change`   | a changed file at head with the set of lines this diff touched               |
-| `Analyzer` | `(change, rules) => findings`; two of them, syntax and judge                 |
+| `Analyzer` | `(change, rules) => findings`; three of them, syntax, judge, and jev         |
 | `Finding`  | a rule, a location, a verbatim quote, a confidence                           |
 | `Report`   | the score, its axes, and the ranked findings                                 |
 
 `scan` reads what changed, runs every analyzer over it, confirms the findings that need a repo-wide check, and
 scores what survives. The syntax analyzer parses each file once with tree-sitter and runs every `ast` rule against
 the tree. The judge analyzer makes one model call per changed file with the `judge` rules as its rubric, and drops
-any finding whose quote is not in the file, is not on a changed line, or is under the confidence floor.
+any finding whose quote is not in the file, is not on a changed line, or is under the confidence floor. The jev
+analyzer runs when `TYPESAFE_API_KEY` is set: one TypeSafe decision-model call per changed function, asking every
+`judge` rule with a measured `jev.threshold` whether the function violates it, follows it, or is not about it. Jev
+findings below `jev.confidenceFloor` go to the verifier, the judge model as a bounded agent that may read files and
+find references before confirming or rejecting each one.
 
 ## Rules
 
@@ -113,13 +117,16 @@ jobs:
 The Action reacts to the comment with eyes, checks out that pull request's head, and posts the report as usual.
 `@slopscan` also notifies whoever owns that GitHub handle; `/slopscan` does not.
 
-Judge results are cached by content under `.slopscan-cache`, so re-running the same commit costs nothing.
+Judge and verifier results are cached by content under `.slopscan-cache`, so re-running the same commit costs
+nothing.
 
 ## What leaves your machine
 
 The syntax rules run locally. The judge sends each changed file's changed regions, with fifteen lines of context
-and the file's imports, to the model provider named in `judge.model`. Nothing else is sent. If that is not
-acceptable for a repository, run with `--no-judge` or leave the key out of the Action.
+and the file's imports, to the model provider named in `judge.model`. Jev sends each changed function with its
+file's import and declaration names to TypeSafe, and the verifier may send any tracked file's lines or grep hits
+to the judge model. Nothing else is sent. If that is not acceptable for a repository, run with `--no-judge`,
+`--no-jev`, or `--no-verify`, or leave the keys out.
 
 ## Usage
 
@@ -127,6 +134,7 @@ acceptable for a repository, run with `--no-judge` or leave the key out of the A
 pnpm install
 pnpm dev scan --base main                 # judge on; needs OPENAI_API_KEY in .env
 pnpm dev scan --base main --no-judge      # syntax rules only, no key needed
+pnpm dev scan --base main --no-jev        # skip jev even when TYPESAFE_API_KEY is set
 pnpm dev scan --base main --format json   # or markdown
 pnpm dev rules                            # list rules
 pnpm dev scan --rules ./my-rules          # bring your own rule directory

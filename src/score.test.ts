@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Change } from './change.js';
+import { Origin } from './finding.js';
 import type { Finding } from './finding.js';
 import { Axis, Detect, Severity } from './rule.js';
 import type { Rule } from './rule.js';
@@ -35,6 +36,7 @@ function finding(ruleId: string, line: number, confidence = 1): Finding {
 		quote: 'x',
 		message: ruleId,
 		confidence,
+		origin: Origin.AST,
 	};
 }
 

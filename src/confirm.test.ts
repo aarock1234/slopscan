@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { confirm } from './confirm.js';
+import { Origin } from './finding.js';
 import type { Finding } from './finding.js';
 import { Confirm, Detect } from './rule.js';
 import type { Rule } from './rule.js';
@@ -78,6 +79,7 @@ function finding(ruleId: string, path: string, symbol?: string): Finding {
 		quote: 'x',
 		message: ruleId,
 		confidence: 0.9,
+		origin: Origin.JUDGE,
 		...(symbol && { symbol }),
 	};
 }

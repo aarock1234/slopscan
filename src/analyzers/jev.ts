@@ -1,7 +1,55 @@
-import type { ChoiceCriteria, ChoiceQuestion, EntryType, ScoreQuestion } from '@typesafe-ai/sdk';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
+import type { ChoiceCriteria, ChoiceQuestion, JsonValue, ScoreQuestion, TypeSafeClient } from '@typesafe-ai/sdk';
+import { z } from 'zod';
+
+import type { Analyzer } from '../analyzer.js';
+import type { Change } from '../change.js';
+import { isIgnored } from '../change.js';
+import { Origin } from '../finding.js';
+import type { Finding } from '../finding.js';
+import { detectLang } from '../lang.js';
 import type { Lang } from '../lang.js';
-import type { JudgeRule } from '../rule.js';
+import { Detect } from '../rule.js';
+import type { JudgeRule, Rule } from '../rule.js';
+import { countRepo, extractUnits } from '../units.js';
+import type { RepoCounts, Unit } from '../units.js';
+
+const execFileAsync = promisify(execFile);
+
+export const jevConfigSchema = z
+	.object({
+		// jev is on whenever TYPESAFE_API_KEY is set; this turns it off regardless
+		enabled: z.boolean().default(true),
+		model: z.string().default('jev-latest'),
+		// findings under this confidence go to the verifier; at or above it they stand on their own
+		confidenceFloor: z.number().min(0).max(1).default(0.45),
+	})
+	.strict();
+
+export type JevConfig = z.infer<typeof jevConfigSchema>;
+
+export const jevSummarySchema = z.object({
+	model: z.string(),
+	units: z.number().int().nonnegative(),
+	calls: z.number().int().nonnegative(),
+	inputTokens: z.number().int().nonnegative(),
+});
+
+export type JevSummary = z.infer<typeof jevSummarySchema>;
+
+export type Jev = {
+	analyze: Analyzer;
+	summary(): JevSummary;
+};
+
+export type JevOptions = {
+	client: TypeSafeClient;
+	config: JevConfig;
+	repo: string;
+	ignore: readonly string[];
+};
 
 // the answer space for one rule against one unit of code. `not_applicable` gives the model somewhere to put
 // code the rule has nothing to say about, instead of forcing a coin flip between the other two.
@@ -17,34 +65,124 @@ export type QuestionOptions = {
 	notApplicable: boolean;
 };
 
-// facts code can compute about a unit so the model never has to guess them. "code calculates, Jev judges."
-export type UnitFacts = {
-	name: string;
-	exported: boolean;
-	lines: number;
-	parameters: number;
-	returnsBoolean: boolean;
-	// call sites across the repository, not counting the definition
-	callers: number;
-	// every other mention of the name across the repository: calls, references passed as values, re-exports
-	references: number;
-};
+// one Jev call per changed function: the function, computed facts about it, and the names around it in its file
+// as state; every applicable judge rule with a measured threshold as a parallel contrast question.
+export function createJev(options: JevOptions): Jev {
+	const summary: JevSummary = { model: options.config.model, units: 0, calls: 0, inputTokens: 0 };
+	const counts = new Map<Lang, Promise<RepoCounts>>();
+
+	function countsFor(lang: Lang): Promise<RepoCounts> {
+		let pending = counts.get(lang);
+
+		if (pending === undefined) {
+			pending = trackedFiles(options.repo).then(paths =>
+				countRepo(
+					options.repo,
+					lang,
+					paths.filter(path => detectLang(path) === lang && !isIgnored(path, options.ignore))
+				)
+			);
+			counts.set(lang, pending);
+		}
+
+		return pending;
+	}
+
+	async function analyze(change: Change, rules: readonly Rule[]): Promise<Finding[]> {
+		const judgeRules = rules.filter(
+			(rule): rule is JudgeRule => rule.detect === Detect.JUDGE && rule.jevThreshold !== undefined
+		);
+
+		if (judgeRules.length === 0) {
+			return [];
+		}
+
+		const units = extractUnits(change.lang, change.path, change.source, await countsFor(change.lang)).filter(unit =>
+			touchesChange(unit, change)
+		);
+		summary.units += units.length;
+
+		const perUnit = await Promise.all(units.map(unit => judgeUnit(unit, change.lang, judgeRules)));
+
+		return perUnit.flat();
+	}
+
+	async function judgeUnit(unit: Unit, lang: Lang, rules: readonly JudgeRule[]): Promise<Finding[]> {
+		const { answers, usage } = await options.client.systemOne({
+			model: options.config.model,
+			state: {
+				...codeState(lang, unit),
+				rules: Object.fromEntries(rules.map(rule => [rule.id, ruleState(rule)])),
+			},
+			questions: Object.fromEntries(
+				rules.map(rule => [rule.id, contrastQuestion({ notApplicable: true }, `rules["${rule.id}"]`)])
+			),
+		});
+
+		summary.calls += 1;
+		summary.inputTokens += usage.input_tokens;
+
+		return rules.flatMap(rule => {
+			const answer = answers[rule.id];
+
+			if (answer?.type !== 'choice') {
+				return [];
+			}
+
+			const probability = answer.probabilities[Verdict.VIOLATES] ?? 0;
+
+			if (probability < (rule.jevThreshold ?? Number.POSITIVE_INFINITY)) {
+				return [];
+			}
+
+			return [
+				{
+					ruleId: rule.id,
+					path: unit.path,
+					line: unit.line,
+					endLine: unit.endLine,
+					quote: unit.header,
+					message: rule.message,
+					confidence: answer.confidence,
+					origin: Origin.JEV,
+				},
+			];
+		});
+	}
+
+	return { analyze, summary: () => ({ ...summary }) };
+}
+
+// a unit is judged when this change touched any of its lines
+function touchesChange(unit: Unit, change: Change): boolean {
+	for (const line of change.changedLines) {
+		if (line >= unit.line && line <= unit.endLine) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+async function trackedFiles(repo: string): Promise<string[]> {
+	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf-8' });
+
+	return stdout.split('\0').filter(path => path.length > 0);
+}
 
 // what the model sees about the code under judgment: the unit, facts about it, and the names around it in
 // its file, so questions about colocation, wrappers, and reuse have something to check against
-export type CodeState = {
-	language: string;
-	code: string;
-	facts?: UnitFacts;
-	file?: {
-		path: string;
-		imports: string[];
-		declarations: string[];
+export function codeState(lang: Lang, unit: Unit): Record<string, JsonValue> {
+	return {
+		language: languageName(lang),
+		code: unit.source,
+		facts: { ...unit.facts },
+		file: { path: unit.path, imports: [...unit.imports], declarations: [...unit.declarations] },
 	};
-};
+}
 
 // the rule as state, the shape that separated fixtures best: everything the rule file says, flat
-export function ruleState(rule: JudgeRule): EntryType {
+export function ruleState(rule: JudgeRule): Record<string, JsonValue> {
 	return {
 		id: rule.id,
 		message: rule.message,

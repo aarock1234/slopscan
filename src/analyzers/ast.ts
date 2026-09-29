@@ -3,6 +3,7 @@ import { Lang as Parser, parse, registerDynamicLanguage } from '@ast-grep/napi';
 import type { SgNode } from '@ast-grep/napi';
 
 import type { Analyzer } from '../analyzer.js';
+import { Origin } from '../finding.js';
 import type { Finding } from '../finding.js';
 import { Lang } from '../lang.js';
 import { Detect } from '../rule.js';
@@ -100,6 +101,7 @@ function toFinding(rule: AstRule, path: string, match: AstMatch): Finding {
 		quote: firstLine(match.text),
 		message: rule.message,
 		confidence: 1,
+		origin: Origin.AST,
 	};
 }
 

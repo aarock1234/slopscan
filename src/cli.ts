@@ -3,6 +3,10 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { TypeSafeClient } from '@typesafe-ai/sdk';
+
+import { createJev } from './analyzers/jev.js';
+import type { Jev } from './analyzers/jev.js';
 import { createJudge } from './analyzers/judge.js';
 import type { Judge } from './analyzers/judge.js';
 import { loadConfig } from './config.js';
@@ -11,14 +15,18 @@ import { resolveModel } from './model.js';
 import { Format, formatValues, isFormat, renderReport } from './report.js';
 import { loadRules } from './rule.js';
 import { scan } from './scan.js';
+import { env } from './shared/env.js';
 import { SlopscanError } from './shared/errors.js';
 import { logger } from './shared/log.js';
 import { RULES_DIR } from './shared/paths.js';
+import { createVerifier } from './verify.js';
+import type { Verifier } from './verify.js';
 
 const HELP = `slopscan - scores a git diff for slop
 
 usage:
-  slopscan scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>] [--no-judge] [--config <path>]
+  slopscan scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>]
+                [--no-judge] [--no-jev] [--no-verify] [--config <path>]
   slopscan rules
 
 options:
@@ -26,7 +34,9 @@ options:
   --head <ref>       ref to score (default: HEAD)
   --baseline <ref>   also score baseline..base and show the delta
   --format <fmt>     ${formatValues.join(', ')} (default: ${Format.TERMINAL})
-  --no-judge         skip the LLM judge; syntax rules only, no API key needed
+  --no-judge         skip the LLM judge over whole files
+  --no-jev           skip the Jev decision model over changed functions (on when TYPESAFE_API_KEY is set)
+  --no-verify        keep Jev's less confident findings unverified instead of checking them with the LLM
   --config <path>    path to .slopscan.yml (default: ./.slopscan.yml)
   --rules <dir>      rule directory (default: the bundled rules)
   --json-out <path>  also write the full report as json to this file
@@ -57,6 +67,8 @@ const parseOptions = {
 		baseline: { type: 'string' },
 		format: { type: 'string', default: Format.TERMINAL },
 		judge: { type: 'boolean', default: true },
+		jev: { type: 'boolean', default: true },
+		verify: { type: 'boolean', default: true },
 		config: { type: 'string' },
 		rules: { type: 'string', default: RULES_DIR },
 		'json-out': { type: 'string' },
@@ -97,6 +109,9 @@ async function runScan(values: Options): Promise<ExitCode> {
 	const repo = process.cwd();
 	const [config, rules] = await Promise.all([loadConfig(repo, values.config), loadRules(values.rules)]);
 	const judge = values.judge ? buildJudge(repo, config) : undefined;
+	const jev =
+		values.jev && config.jev.enabled && env.TYPESAFE_API_KEY !== undefined ? buildJev(repo, config) : undefined;
+	const verifier = jev && values.verify && config.verify.enabled ? buildVerifier(repo, config) : undefined;
 
 	const report = await scan({
 		repo,
@@ -104,6 +119,8 @@ async function runScan(values: Options): Promise<ExitCode> {
 		config,
 		rules,
 		...(judge && { judge }),
+		...(jev && { jev }),
+		...(verifier && { verifier }),
 		...(values.baseline !== undefined && { baseline: values.baseline }),
 	});
 
@@ -123,6 +140,27 @@ function buildJudge(repo: string, config: Config): Judge {
 		config: config.judge,
 		model: resolveModel(config.judge.model),
 		cacheDir: join(repo, CACHE_DIR, 'judge'),
+	});
+}
+
+function buildJev(repo: string, config: Config): Jev {
+	return createJev({
+		client: new TypeSafeClient({ apiKey: env.TYPESAFE_API_KEY, defaultModel: config.jev.model }),
+		config: config.jev,
+		repo,
+		ignore: config.ignore,
+	});
+}
+
+// the verifier is the judge's model in a different role, so it shares the judge's model setting
+function buildVerifier(repo: string, config: Config): Verifier {
+	return createVerifier({
+		model: resolveModel(config.judge.model),
+		modelId: config.judge.model,
+		config: config.verify,
+		repo,
+		cacheDir: join(repo, CACHE_DIR, 'verify'),
+		confidenceFloor: config.jev.confidenceFloor,
 	});
 }
 
