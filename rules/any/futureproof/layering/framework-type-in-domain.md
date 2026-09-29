@@ -19,17 +19,23 @@ ignore:
   - '**/*.test.ts'
   - '**/*.spec.ts'
   - '**/*_test.go'
+falsePositives:
+  - >-
+    an HTTP client reading the response to a request it made, such as a function
+    taking *http.Response or fetch's Response to decode a payload; the rule is
+    about a server's request and response types reaching a service
+  - 'a package whose purpose is one protocol, such as an RDAP or WHOIS client'
 jev:
-  threshold: 0.49
+  threshold: 0.48
 ---
 
 ## Why
 
-A service function that takes the framework's request or response type can only be called by that framework: not from a job, a CLI, another transport, or a unit test without a fake request. It also pulls every HTTP concern, from headers to status codes, into the layer that should only know the domain. Give the service plain typed inputs and return plain typed results; the handler translates at the edge.
+A service function that takes the server framework's incoming request or outgoing response type can only be called by that framework: not from a job, a CLI, another transport, or a unit test without a fake request. It also pulls every HTTP concern, from headers to status codes, into the layer that should only know the domain. Give the service plain typed inputs and return plain typed results; the handler translates at the edge.
 
 ## Message
 
-http framework type in a domain signature; take plain input and return a plain result
+server request or response type in a domain signature; take plain input and return a plain result
 
 ## Bad
 
@@ -81,5 +87,19 @@ func (s *OrderService) Create(ctx context.Context, in CreateOrderInput) (Order, 
 	}
 
 	return order, nil
+}
+```
+
+```go
+// a client decoding the response to its own request is protocol code, not a service driven by a server
+func parseResponse(resp *http.Response) (*Record, error) {
+	defer func() { _ = resp.Body.Close() }()
+
+	var record Record
+	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
+		return nil, fmt.Errorf("decoding rdap response: %w", err)
+	}
+
+	return &record, nil
 }
 ```

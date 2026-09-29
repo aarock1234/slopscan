@@ -13,7 +13,7 @@ falsePositives:
     a schema moved into its own file because it is large, when it stays in the
     same feature directory
 jev:
-  threshold: 0.59
+  threshold: 0.8
 ---
 
 ## Why
@@ -51,5 +51,17 @@ export async function handleCreateUser(req: Request, res: Response): Promise<voi
 	const input = createUserSchema.parse(req.body);
 
 	res.json(await createUser(input));
+}
+```
+
+```ts
+// the schema is the shared contract of a domain module, imported from where that concept lives
+import { gradingSourceSchema } from '@acme/types/grading-source';
+import type { GradingSource } from '@acme/types/grading-source';
+
+export function readGradingSource(input: unknown): GradingSource | undefined {
+	const result = gradingSourceSchema.safeParse(input);
+
+	return result.success ? result.data : undefined;
 }
 ```

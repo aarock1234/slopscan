@@ -2,7 +2,11 @@
 severity: minor
 detect: judge
 falsePositives:
-  - 'pure computation with no network, disk, or database access'
+  - 'pure computation with no network, database, or subprocess access'
+  - >-
+    local filesystem work such as os.Open, os.ReadFile, os.WriteFile, or
+    os.Rename; the standard library takes no context for these and the rule is
+    about calls that can hang on a remote party
   - >-
     a method satisfying an interface that has no context, such as http.Handler
     where r.Context() is used inside
@@ -17,7 +21,7 @@ A function that talks to the network, a database, or another process without a `
 
 ## Message
 
-function does I/O without a context; take ctx and pass it to the call
+function talks to the network, a database, or a subprocess without a context; take ctx and pass it to the call
 
 ## Bad
 
@@ -50,5 +54,22 @@ func (c *Client) Fetch(ctx context.Context, id string) (*Item, error) {
 	defer func() { _ = resp.Body.Close() }()
 
 	return decode(resp.Body)
+}
+```
+
+```go
+// local files have no remote party to wait on, so there is nothing for a context to cancel
+func readCache(path string) (*cachedBootstrap, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading cache: %w", err)
+	}
+
+	var cached cachedBootstrap
+	if err := json.Unmarshal(data, &cached); err != nil {
+		return nil, fmt.Errorf("decoding cache: %w", err)
+	}
+
+	return &cached, nil
 }
 ```
