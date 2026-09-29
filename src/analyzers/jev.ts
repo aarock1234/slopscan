@@ -1,6 +1,3 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
 import { BadRequestError } from '@typesafe-ai/sdk';
 import type { ChoiceCriteria, ChoiceQuestion, JsonValue, TypeSafeClient } from '@typesafe-ai/sdk';
 import { z } from 'zod';
@@ -15,11 +12,10 @@ import type { Lang } from '../lang.js';
 import { Detect } from '../rule.js';
 import type { JudgeRule, Rule } from '../rule.js';
 import { mapConcurrent } from '../shared/concurrency.js';
+import { trackedFiles } from '../shared/git.js';
 import { logger } from '../shared/log.js';
 import { countRepo, extractUnits } from '../units.js';
 import type { RepoCounts, Unit } from '../units.js';
-
-const execFileAsync = promisify(execFile);
 
 export const jevConfigSchema = z
 	.object({
@@ -330,15 +326,6 @@ function hasChangedLines(unit: Unit, change: Change): boolean {
 	}
 
 	return false;
-}
-
-async function trackedFiles(repo: string): Promise<string[]> {
-	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
-		cwd: repo,
-		encoding: 'utf-8',
-	});
-
-	return stdout.split('\0').filter(path => path.length > 0);
 }
 
 // what the model sees about one unit: the code, facts about it, and the names around it in its file, so

@@ -1,5 +1,5 @@
 ---
-severity: minor
+severity: critical
 detect: judge
 ignore:
   - '**/*.test.ts'

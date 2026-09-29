@@ -15,6 +15,7 @@ import { Lang, detectLang } from './lang.js';
 import { Detect } from './rule.js';
 import type { JudgeRule, Rule } from './rule.js';
 import { mapConcurrent } from './shared/concurrency.js';
+import { trackedFiles } from './shared/git.js';
 import { loadPrompt } from './shared/prompts.js';
 
 const execFileAsync = promisify(execFile);
@@ -435,13 +436,4 @@ async function findReferences(repo: string, symbol: string): Promise<string> {
 		// git grep exits 1 when nothing matches
 		return 'no references';
 	}
-}
-
-async function trackedFiles(repo: string): Promise<string[]> {
-	const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
-		cwd: repo,
-		encoding: 'utf-8',
-	});
-
-	return stdout.split('\0').filter(path => path.length > 0);
 }

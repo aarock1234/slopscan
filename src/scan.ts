@@ -11,6 +11,7 @@ import type { Finding } from './finding.js';
 import type { Report } from './report.js';
 import type { Rule } from './rule.js';
 import { score } from './score.js';
+import { findDuplicateShapes } from './shapes.js';
 import type { Scored } from './score.js';
 import type { JevTier } from './tiers.js';
 import type { Verified } from './verify.js';
@@ -67,7 +68,12 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 	];
 
 	const changes = await readChanges(options.repo, range, options.config.ignore);
-	const findings = await collectFindings(changes, enabled, analyzers);
+	// the shape detector reads the whole repository, so it runs beside the per-file analyzers rather than as one
+	const [perFile, duplicates] = await Promise.all([
+		collectFindings(changes, enabled, analyzers),
+		findDuplicateShapes(options.repo, changes, enabled, options.config.ignore),
+	]);
+	const findings = [...perFile, ...duplicates];
 	const confirmed = await confirm(findings, enabled, {
 		repo: options.repo,
 		ignore: options.config.ignore,
