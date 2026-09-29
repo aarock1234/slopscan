@@ -36,7 +36,7 @@ options:
   --format <fmt>     ${formatValues.join(', ')} (default: ${Format.TERMINAL})
   --judge            run the LLM judge over whole files, the thorough and expensive tier (default: judge.enabled)
   --no-jev           skip the Jev decision model over changed functions and types (on when TYPESAFE_API_KEY is set)
-  --no-verify        drop Jev's less confident findings instead of checking them with the judge model
+  --no-verify        drop Jev's less confident findings instead of checking them with the verifier model
   --config <path>    path to .slopscan.yml (default: ./.slopscan.yml)
   --rules <dir>      rule directory (default: the bundled rules)
   --json-out <path>  also write the full report as json to this file
@@ -112,9 +112,9 @@ async function runScan(values: Options): Promise<ExitCode> {
 	const judge = (values.judge ?? config.judge.enabled) ? buildJudge(repo, config) : undefined;
 	const jev =
 		values.jev && config.jev.enabled && env.TYPESAFE_API_KEY !== undefined ? buildJev(repo, config) : undefined;
-	// the verifier borrows the judge model, so it needs that key; without it, low-confidence jev findings are dropped
+	// without the verifier model's key, low-confidence jev findings are dropped instead of checked
 	const verifier =
-		jev && values.verify && config.verify.enabled && hasKey(config.judge.model)
+		jev && values.verify && config.verify.enabled && hasKey(config.verify.model)
 			? buildVerifier(repo, config)
 			: undefined;
 
@@ -157,11 +157,10 @@ function buildJev(repo: string, config: Config): Jev {
 	});
 }
 
-// the verifier is the judge's model in a different role, so it shares the judge's model setting
 function buildVerifier(repo: string, config: Config): Verifier {
 	return createVerifier({
-		model: resolveModel(config.judge.model),
-		modelId: config.judge.model,
+		model: resolveModel(config.verify.model),
+		modelId: config.verify.model,
 		config: config.verify,
 		repo,
 		cacheDir: join(repo, CACHE_DIR, 'verify'),

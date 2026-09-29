@@ -21,6 +21,9 @@ const execFileAsync = promisify(execFile);
 export const verifyConfigSchema = z
 	.object({
 		enabled: z.boolean().default(true),
+		// "<provider>/<model id>"; a small model does this job: on 34 checks across two repositories Luna gave the same
+		// verdict as Sol every time, at a twentieth of the price
+		model: z.string().default('openrouter/openai/gpt-6-luna'),
 		// tool calls the verifier may make before it must answer
 		maxSteps: z.number().int().positive().default(6),
 	})

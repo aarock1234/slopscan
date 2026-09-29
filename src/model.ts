@@ -36,7 +36,7 @@ export function resolveModel(spec: string): LanguageModel {
 
 	if (apiKey === undefined) {
 		throw new ConfigError(
-			`${KEY_NAME[provider]} is required by ${spec}; set it, change judge.model, or run with --no-judge --no-verify`
+			`${KEY_NAME[provider]} is required by ${spec}; set it or change the model in .slopscan.yml`
 		);
 	}
 
@@ -54,9 +54,7 @@ function parseSpec(spec: string): Spec {
 	const modelId = spec.slice(slash + 1);
 
 	if (slash === -1 || !isProvider(provider) || modelId.length === 0) {
-		throw new ConfigError(
-			`judge.model must be "<provider>/<model>" with provider one of ${providerValues.join(', ')}`
-		);
+		throw new ConfigError(`a model is "<provider>/<model>" with provider one of ${providerValues.join(', ')}`);
 	}
 
 	return { provider, modelId };

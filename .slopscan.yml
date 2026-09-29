@@ -26,6 +26,7 @@ jev:
 
 verify:
     enabled: true
+    model: openrouter/openai/gpt-6-luna
     maxSteps: 6
 
 scoring:

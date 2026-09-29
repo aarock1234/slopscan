@@ -31,7 +31,7 @@ the tree. The judge analyzer makes one model call per changed file with the `jud
 any finding whose quote is not in the file, is not on a changed line, or is under the confidence floor. The jev
 analyzer runs when `TYPESAFE_API_KEY` is set: one TypeSafe decision-model call per changed function or type, asking every
 `judge` rule with a measured `jev.threshold` whether the function violates it, follows it, or is not about it. Jev
-findings below `jev.confidenceFloor` go to the verifier, the judge model as a bounded agent that may read files and
+findings below `jev.confidenceFloor` go to the verifier, a small model as a bounded agent that may read files and
 find references before confirming or rejecting each one.
 
 ## Rules
@@ -97,7 +97,7 @@ the pull request up to date, and fails the check when the score is over `failThr
 
 The keys pick the tier. No key runs the syntax rules only. `typesafe-api-key` adds Jev, one decision-model call per
 changed function or type, a few cents per pull request. `openrouter-api-key` or `openai-api-key` next to it lets
-the verifier check Jev's less confident findings with the judge model. `judge: true` adds the full LLM judge over
+the verifier check Jev's less confident findings with a small model, Luna by default. `judge: true` adds the full LLM judge over
 whole files, the thorough tier, at roughly ten times the cost. Inputs: `base`, `judge`, `typesafe-api-key`,
 `openrouter-api-key`, `openai-api-key`, `comment`, `fail-on-threshold`, `version`. Outputs: `score`, `grade`.
 
@@ -130,7 +130,7 @@ nothing.
 The syntax rules run locally. The judge sends each changed file's changed regions, with fifteen lines of context
 and the file's imports, to the model provider named in `judge.model`. Jev sends each changed function or type with its
 file's import and declaration names to TypeSafe, and the verifier may send any tracked file's lines or grep hits
-to the judge model. Nothing else is sent. If that is not acceptable for a repository, run with `--no-judge`,
+to the model named in `verify.model`. Nothing else is sent. If that is not acceptable for a repository, run with `--no-judge`,
 `--no-jev`, or `--no-verify`, or leave the keys out.
 
 ## Usage
