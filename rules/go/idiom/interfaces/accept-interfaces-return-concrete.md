@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a factory that picks among several implementations at runtime
-    - returning error or a standard interface such as io.Reader where the concrete type is an implementation detail
-    - a parameter that needs unexported fields of the concrete type
+  - a factory that picks among several implementations at runtime
+  - >-
+    returning error or a standard interface such as io.Reader where the concrete
+    type is an implementation detail
+  - a parameter that needs unexported fields of the concrete type
+jev:
+  threshold: 0.47
 ---
 
 ## Why

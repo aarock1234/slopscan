@@ -2,9 +2,13 @@
 severity: info
 detect: judge
 falsePositives:
-    - a block whose only statement is the return
-    - a return that directly follows the opening brace of an if, else, or case body
-    - a one-line function body
+  - a block whose only statement is the return
+  - >-
+    a return that directly follows the opening brace of an if, else, or case
+    body
+  - a one-line function body
+jev:
+  threshold: 0.76
 ---
 
 ## Why

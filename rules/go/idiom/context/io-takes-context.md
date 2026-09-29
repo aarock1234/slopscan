@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - pure computation with no network, disk, or database access
-    - a method satisfying an interface that has no context, such as http.Handler where r.Context() is used inside
-    - test helpers
+  - 'pure computation with no network, disk, or database access'
+  - >-
+    a method satisfying an interface that has no context, such as http.Handler
+    where r.Context() is used inside
+  - test helpers
+jev:
+  threshold: 0.5
 ---
 
 ## Why

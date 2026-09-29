@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - unrelated constants grouped for convenience, such as defaults or configuration keys
-    - a single constant
-    - values only ever used as map keys or labels, never as a parameter or field type
+  - >-
+    unrelated constants grouped for convenience, such as defaults or
+    configuration keys
+  - a single constant
+  - >-
+    values only ever used as map keys or labels, never as a parameter or field
+    type
+jev:
+  threshold: 0.51
 ---
 
 ## Why

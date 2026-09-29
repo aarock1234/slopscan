@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - re-exports of values such as functions, classes, const objects, or schemas
-    - a `type` or `interface` declared inline with `export type` or `export interface`
-    - re-exports that mix types and values and already mark the types with an inline `type` modifier
+  - 're-exports of values such as functions, classes, const objects, or schemas'
+  - >-
+    a `type` or `interface` declared inline with `export type` or `export
+    interface`
+  - >-
+    re-exports that mix types and values and already mark the types with an
+    inline `type` modifier
+jev:
+  threshold: 0.35
 ---
 
 ## Why

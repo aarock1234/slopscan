@@ -2,9 +2,13 @@
 severity: info
 detect: judge
 falsePositives:
-    - parameters or properties that the function or class genuinely mutates
-    - builder or accumulator objects whose whole purpose is to be filled in
-    - types generated from a schema or an ORM where the modifier is not under the author's control
+  - parameters or properties that the function or class genuinely mutates
+  - builder or accumulator objects whose whole purpose is to be filled in
+  - >-
+    types generated from a schema or an ORM where the modifier is not under the
+    author's control
+jev:
+  threshold: 0.51
 ---
 
 ## Why

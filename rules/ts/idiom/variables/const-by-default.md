@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a `let` that is assigned in more than one branch or reassigned later in its scope, including inside a loop body or a try block
-    - a `let` declared without an initializer and assigned exactly once further down, when merging it into a `const` would need a nested ternary or an IIFE
-    - loop counters in a classic `for` statement
+  - >-
+    a `let` that is assigned in more than one branch or reassigned later in its
+    scope, including inside a loop body or a try block
+  - >-
+    a `let` declared without an initializer and assigned exactly once further
+    down, when merging it into a `const` would need a nested ternary or an IIFE
+  - loop counters in a classic `for` statement
+jev:
+  threshold: 0.49
 ---
 
 ## Why

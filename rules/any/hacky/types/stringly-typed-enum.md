@@ -2,10 +2,19 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a string literal compared in exactly one place
-    - a value from an external protocol or wire format compared once at the boundary where it is parsed into a typed value
-    - discriminant literals of a union or sum type that already declares the allowed values, such as `if (event.kind === 'created')` where `kind` is typed as a union of literals
-    - map keys, header names, and env variable names, which are identifiers rather than a closed set of states
+  - a string literal compared in exactly one place
+  - >-
+    a value from an external protocol or wire format compared once at the
+    boundary where it is parsed into a typed value
+  - >-
+    discriminant literals of a union or sum type that already declares the
+    allowed values, such as `if (event.kind === 'created')` where `kind` is
+    typed as a union of literals
+  - >-
+    map keys, header names, and env variable names, which are identifiers rather
+    than a closed set of states
+jev:
+  threshold: 0.5
 ---
 
 ## Why

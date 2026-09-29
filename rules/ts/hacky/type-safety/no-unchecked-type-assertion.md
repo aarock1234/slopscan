@@ -2,10 +2,18 @@
 severity: major
 detect: judge
 falsePositives:
-    - '`as const` on a literal, which narrows rather than widens'
-    - a cast inside a branded-type constructor such as `return id as UserId`, where the function is the single point that mints the brand
-    - a cast that follows a runtime check in the same block, such as after `typeof`, `in`, or `Array.isArray`
-    - a cast to `unknown` on its own, which discards type information rather than inventing it
+  - '`as const` on a literal, which narrows rather than widens'
+  - >-
+    a cast inside a branded-type constructor such as `return id as UserId`,
+    where the function is the single point that mints the brand
+  - >-
+    a cast that follows a runtime check in the same block, such as after
+    `typeof`, `in`, or `Array.isArray`
+  - >-
+    a cast to `unknown` on its own, which discards type information rather than
+    inventing it
+jev:
+  threshold: 0.5
 ---
 
 ## Why

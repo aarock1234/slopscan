@@ -2,14 +2,20 @@
 severity: minor
 detect: judge
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
 falsePositives:
-    - table-driven tests and test fixtures, where repetition is the point
-    - generated code
-    - two or three short lines that happen to look alike, such as consecutive field assignments or switch arms
-    - blocks that look alike today but belong to different domains and are expected to diverge, when the code says so
+  - 'table-driven tests and test fixtures, where repetition is the point'
+  - generated code
+  - >-
+    two or three short lines that happen to look alike, such as consecutive
+    field assignments or switch arms
+  - >-
+    blocks that look alike today but belong to different domains and are
+    expected to diverge, when the code says so
+jev:
+  threshold: 0.5
 ---
 
 ## Why

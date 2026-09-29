@@ -2,9 +2,15 @@
 severity: major
 detect: judge
 falsePositives:
-    - a genuinely dynamic shape such as user-defined metadata or plugin configuration
-    - map[string]json.RawMessage used for a two-phase decode on a discriminator field
-    - pass-through data that is never read by field name
+  - >-
+    a genuinely dynamic shape such as user-defined metadata or plugin
+    configuration
+  - >-
+    map[string]json.RawMessage used for a two-phase decode on a discriminator
+    field
+  - pass-through data that is never read by field name
+jev:
+  threshold: 0.5
 ---
 
 ## Why

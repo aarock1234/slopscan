@@ -2,9 +2,13 @@
 severity: critical
 detect: judge
 falsePositives:
-    - read-only resources such as response bodies, files opened with os.Open, and listeners
-    - a Close preceded by an explicit Sync or Flush whose error is checked
-    - a deferred Rollback that is expected to fail after a successful Commit
+  - >-
+    read-only resources such as response bodies, files opened with os.Open, and
+    listeners
+  - a Close preceded by an explicit Sync or Flush whose error is checked
+  - a deferred Rollback that is expected to fail after a successful Commit
+jev:
+  threshold: 0.51
 ---
 
 ## Why

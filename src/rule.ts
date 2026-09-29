@@ -84,6 +84,11 @@ const frontmatterSchema = z.discriminatedUnion('detect', [
 			detect: z.literal(Detect.JUDGE),
 			confirm: z.enum(confirmValues).optional(),
 			falsePositives: z.array(z.string()).default([]),
+			// measured on the rule's own fixtures by scripts/jev-thresholds.ts; absent means Jev is not asked
+			jev: z
+				.object({ threshold: z.number().min(0).max(1) })
+				.strict()
+				.optional(),
 			...commonFrontmatter,
 		})
 		.strict(),
@@ -120,6 +125,8 @@ export type JudgeRule = RuleBase & {
 	detect: typeof Detect.JUDGE;
 	confirm?: Confirm;
 	falsePositives: readonly string[];
+	// violation probability at which a Jev verdict counts, measured on this rule's fixtures
+	jevThreshold?: number;
 };
 
 export type Rule = AstRule | JudgeRule;
@@ -188,6 +195,7 @@ export function parseRule(rulesDir: string, path: string, content: string): Rule
 		...base,
 		detect: Detect.JUDGE,
 		...(frontmatter.data.confirm && { confirm: frontmatter.data.confirm }),
+		...(frontmatter.data.jev && { jevThreshold: frontmatter.data.jev.threshold }),
 		falsePositives: frontmatter.data.falsePositives,
 	};
 }

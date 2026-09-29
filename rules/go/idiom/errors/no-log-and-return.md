@@ -2,9 +2,17 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a handler that logs and then writes a sanitized response instead of returning the error
-    - a log line that adds details the caller cannot reconstruct (a debug dump of the request)
-    - the error is returned from a top-level run function where nothing above will log it
+  - >-
+    a handler that logs and then writes a sanitized response instead of
+    returning the error
+  - >-
+    a log line that adds details the caller cannot reconstruct (a debug dump of
+    the request)
+  - >-
+    the error is returned from a top-level run function where nothing above will
+    log it
+jev:
+  threshold: 0.5
 ---
 
 ## Why

@@ -3,10 +3,20 @@ severity: minor
 detect: judge
 confirm: implCount
 falsePositives:
-    - a port at an architecture boundary whose second implementation is a fake or mock in tests
-    - a small consumer-side interface in Go, one or two methods declared next to the code that uses them, which narrows a dependency rather than mirroring it
-    - an interface that is part of a published library's contract, where implementations live outside this repository
-    - an interface with several implementations, or one whose second implementation arrives in the same change
+  - >-
+    a port at an architecture boundary whose second implementation is a fake or
+    mock in tests
+  - >-
+    a small consumer-side interface in Go, one or two methods declared next to
+    the code that uses them, which narrows a dependency rather than mirroring it
+  - >-
+    an interface that is part of a published library's contract, where
+    implementations live outside this repository
+  - >-
+    an interface with several implementations, or one whose second
+    implementation arrives in the same change
+jev:
+  threshold: 0.63
 ---
 
 ## Why

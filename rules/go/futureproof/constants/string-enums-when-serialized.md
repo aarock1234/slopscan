@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - an enum that never leaves the process (not stored, logged, or sent on the wire)
-    - protobuf or database enums with a fixed, documented numbering
-    - a hot path where the integer is a deliberate optimization and a String method covers logs
+  - >-
+    an enum that never leaves the process (not stored, logged, or sent on the
+    wire)
+  - 'protobuf or database enums with a fixed, documented numbering'
+  - >-
+    a hot path where the integer is a deliberate optimization and a String
+    method covers logs
+jev:
+  threshold: 0.5
 ---
 
 ## Why

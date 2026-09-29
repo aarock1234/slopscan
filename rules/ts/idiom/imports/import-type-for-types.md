@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - imports whose binding is used as a runtime value anywhere in the file, including in `instanceof`, `typeof`, decorators, or `satisfies`
-    - imports of a const object that doubles as a type through `typeof`
-    - files where every import in the statement is already marked with an inline `type` modifier
+  - >-
+    imports whose binding is used as a runtime value anywhere in the file,
+    including in `instanceof`, `typeof`, decorators, or `satisfies`
+  - imports of a const object that doubles as a type through `typeof`
+  - >-
+    files where every import in the statement is already marked with an inline
+    `type` modifier
+jev:
+  threshold: 0.45
 ---
 
 ## Why

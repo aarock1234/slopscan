@@ -2,9 +2,11 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a main of a few lines with no resources to release
-    - example or generated programs
-    - a main that only parses flags and calls one function
+  - a main of a few lines with no resources to release
+  - example or generated programs
+  - a main that only parses flags and calls one function
+jev:
+  threshold: 0.47
 ---
 
 ## Why

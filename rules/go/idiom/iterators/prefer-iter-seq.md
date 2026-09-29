@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a channel that moves work between goroutines rather than iterating a collection
-    - an API that must stay compatible with Go older than 1.23
-    - a callback that needs to return an error per element (iter.Seq2 with an error value)
+  - >-
+    a channel that moves work between goroutines rather than iterating a
+    collection
+  - an API that must stay compatible with Go older than 1.23
+  - >-
+    a callback that needs to return an error per element (iter.Seq2 with an
+    error value)
+jev:
+  threshold: 0.5
 ---
 
 ## Why

@@ -2,10 +2,18 @@
 severity: minor
 detect: judge
 falsePositives:
-    - names that already read as a yes/no question with a prefix like `is`, `has`, `should`, `can`, `was`, `needs`, or `allows`
-    - boolean properties whose name is dictated by an external schema, framework prop, or API response
-    - loop or callback parameters of one or two letters in a very short scope
-    - any identifier whose type is not boolean, including functions that return objects, arrays, promises of non-booleans, or nothing
+  - >-
+    names that already read as a yes/no question with a prefix like `is`, `has`,
+    `should`, `can`, `was`, `needs`, or `allows`
+  - >-
+    boolean properties whose name is dictated by an external schema, framework
+    prop, or API response
+  - loop or callback parameters of one or two letters in a very short scope
+  - >-
+    any identifier whose type is not boolean, including functions that return
+    objects, arrays, promises of non-booleans, or nothing
+jev:
+  threshold: 0.48
 ---
 
 ## Why

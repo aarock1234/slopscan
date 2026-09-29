@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - an interface a package exports for plugin authors to implement, where the package is the consumer
-    - a widely shared interface in the style of io.Reader
-    - a package that both defines and consumes the interface
+  - >-
+    an interface a package exports for plugin authors to implement, where the
+    package is the consumer
+  - a widely shared interface in the style of io.Reader
+  - a package that both defines and consumes the interface
+jev:
+  threshold: 0.52
 ---
 
 ## Why

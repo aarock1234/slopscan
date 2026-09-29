@@ -1,6 +1,10 @@
 ---
 severity: info
 detect: ast
+ignore:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
 ast:
     rule:
         kind: object
@@ -11,7 +15,7 @@ ast:
 
 ## Why
 
-An object literal with two or more properties squeezed onto one line hides the key/value pairs in a wall of punctuation and turns every added property into a diff on the same line. One property per line lets the reader scan keys down the left edge and makes each change a one-line diff. Single-property objects such as `{ id }` are fine inline.
+An object literal with two or more properties squeezed onto one line hides the key/value pairs in a wall of punctuation and turns every added property into a diff on the same line. One property per line lets the reader scan keys down the left edge and makes each change a one-line diff. Single-property objects such as `{ id }` are fine inline. Tests are excluded: a fixture object written on one line is read as a value, not as a shape being designed.
 
 ## Message
 

@@ -3,10 +3,14 @@ severity: minor
 detect: judge
 confirm: callCount
 falsePositives:
-    - a function extracted so it can be unit tested in isolation
-    - a function whose name states a decision or a step the body does not make obvious, even with one caller
-    - a type guard or predicate, whose name is the point
-    - exported functions, which may have callers outside this repository
+  - a function extracted so it can be unit tested in isolation
+  - >-
+    a function whose name states a decision or a step the body does not make
+    obvious, even with one caller
+  - 'a type guard or predicate, whose name is the point'
+  - 'exported functions, which may have callers outside this repository'
+jev:
+  threshold: 0.47
 ---
 
 ## Why

@@ -2,9 +2,13 @@
 severity: info
 detect: judge
 falsePositives:
-    - multi-method interfaces, which are named for the role they play (Repository, Storage)
-    - a method name that does not form a natural er noun
-    - a name that matches an existing standard library interface
+  - >-
+    multi-method interfaces, which are named for the role they play (Repository,
+    Storage)
+  - a method name that does not form a natural er noun
+  - a name that matches an existing standard library interface
+jev:
+  threshold: 0.5
 ---
 
 ## Why

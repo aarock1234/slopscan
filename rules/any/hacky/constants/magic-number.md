@@ -2,20 +2,30 @@
 severity: minor
 detect: judge
 ignore:
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
-    - '**/constants.ts'
-    - '**/constants.go'
-    - '**/testdata/**'
-    - '**/fixtures/**'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+  - '**/constants.ts'
+  - '**/constants.go'
+  - '**/testdata/**'
+  - '**/fixtures/**'
 falsePositives:
-    - the literals 0, 1, -1, 2, and 100, and small loop bounds or step sizes
-    - array, slice, or tuple indexes and offsets
-    - the right-hand side of a named constant declaration, which is where the number belongs
-    - a unit conversion factor next to a named constant, such as `const TIMEOUT_MS = 30 * 1000`
-    - well-known protocol values where the call name makes the meaning obvious, such as `res.status(404)` or `os.Exit(1)`
-    - numbers in a plain arithmetic formula whose surrounding function name explains them, such as a percentage or area calculation
+  - 'the literals 0, 1, -1, 2, and 100, and small loop bounds or step sizes'
+  - 'array, slice, or tuple indexes and offsets'
+  - >-
+    the right-hand side of a named constant declaration, which is where the
+    number belongs
+  - >-
+    a unit conversion factor next to a named constant, such as `const TIMEOUT_MS
+    = 30 * 1000`
+  - >-
+    well-known protocol values where the call name makes the meaning obvious,
+    such as `res.status(404)` or `os.Exit(1)`
+  - >-
+    numbers in a plain arithmetic formula whose surrounding function name
+    explains them, such as a percentage or area calculation
+jev:
+  threshold: 0.36
 ---
 
 ## Why

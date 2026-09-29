@@ -2,9 +2,17 @@
 severity: minor
 detect: judge
 falsePositives:
-    - an abstract class that enforces a method contract across a family of implementations and holds real shared behavior such as a template method
-    - framework-required base classes, such as ORM entities, component classes, or error hierarchies extending `Error`
-    - a hierarchy that is one level deep and whose subclasses differ only in the abstract method they implement
+  - >-
+    an abstract class that enforces a method contract across a family of
+    implementations and holds real shared behavior such as a template method
+  - >-
+    framework-required base classes, such as ORM entities, component classes, or
+    error hierarchies extending `Error`
+  - >-
+    a hierarchy that is one level deep and whose subclasses differ only in the
+    abstract method they implement
+jev:
+  threshold: 0.55
 ---
 
 ## Why

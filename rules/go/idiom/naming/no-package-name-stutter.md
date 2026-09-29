@@ -2,9 +2,11 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a name that only coincidentally shares a prefix with the package
-    - exported names in package main
-    - a name that would become a keyword or ambiguous when the prefix is dropped
+  - a name that only coincidentally shares a prefix with the package
+  - exported names in package main
+  - a name that would become a keyword or ambiguous when the prefix is dropped
+jev:
+  threshold: 0.47
 ---
 
 ## Why

@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a type that wraps an external resource (connection, file) and is always built by a constructor
-    - a type whose constructor validates invariants that a zero value cannot satisfy
-    - a type that is unexported and only constructed in one place
+  - >-
+    a type that wraps an external resource (connection, file) and is always
+    built by a constructor
+  - >-
+    a type whose constructor validates invariants that a zero value cannot
+    satisfy
+  - a type that is unexported and only constructed in one place
+jev:
+  threshold: 0.51
 ---
 
 ## Why

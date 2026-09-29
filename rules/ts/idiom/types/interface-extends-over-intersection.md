@@ -2,10 +2,16 @@
 severity: info
 detect: judge
 falsePositives:
-    - intersections in generic constraints such as `T extends Identifiable & Timestamped`
-    - 'branded types of the form `T & { readonly __brand: B }`'
-    - intersections with a union or a mapped type, which `extends` cannot express
-    - an intersection of two object literals that is used once and never extended again
+  - >-
+    intersections in generic constraints such as `T extends Identifiable &
+    Timestamped`
+  - 'branded types of the form `T & { readonly __brand: B }`'
+  - 'intersections with a union or a mapped type, which `extends` cannot express'
+  - >-
+    an intersection of two object literals that is used once and never extended
+    again
+jev:
+  threshold: 0.5
 ---
 
 ## Why

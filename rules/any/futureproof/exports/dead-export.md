@@ -3,16 +3,28 @@ severity: minor
 detect: judge
 confirm: refCount
 ignore:
-    - '**/index.ts'
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/index.ts'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
 falsePositives:
-    - the public API of a library package or a package entry point, where callers live outside this repository
-    - CLI binaries, `main`, `init`, and framework entry points such as route or plugin registrations
-    - symbols reached by reflection, templates, serialization tags, or generated code
-    - methods that exist to satisfy an interface, such as `String()` or `MarshalJSON()`
-    - types and constants that describe a wire format or database schema, which are referenced by name only in data
+  - >-
+    the public API of a library package or a package entry point, where callers
+    live outside this repository
+  - >-
+    CLI binaries, `main`, `init`, and framework entry points such as route or
+    plugin registrations
+  - >-
+    symbols reached by reflection, templates, serialization tags, or generated
+    code
+  - >-
+    methods that exist to satisfy an interface, such as `String()` or
+    `MarshalJSON()`
+  - >-
+    types and constants that describe a wire format or database schema, which
+    are referenced by name only in data
+jev:
+  threshold: 0.72
 ---
 
 ## Why

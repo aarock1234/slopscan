@@ -2,10 +2,14 @@
 severity: major
 detect: judge
 falsePositives:
-    - parsing and validating the request, and mapping a service result or error to a status code, which is the handler's job
-    - a single guard clause such as checking authentication before delegating
-    - a small script, example, or prototype with no service layer at all
-    - middleware, which operates on the request itself rather than on domain state
+  - >-
+    parsing and validating the request, and mapping a service result or error to
+    a status code, which is the handler's job
+  - a single guard clause such as checking authentication before delegating
+  - 'a small script, example, or prototype with no service layer at all'
+  - 'middleware, which operates on the request itself rather than on domain state'
+jev:
+  threshold: 0.5
 ---
 
 ## Why

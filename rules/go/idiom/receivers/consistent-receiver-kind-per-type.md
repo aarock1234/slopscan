@@ -2,8 +2,12 @@
 severity: minor
 detect: judge
 falsePositives:
-    - generated code
-    - a method that must have a value receiver to satisfy an interface on the value type, with a comment saying so
+  - generated code
+  - >-
+    a method that must have a value receiver to satisfy an interface on the
+    value type, with a comment saying so
+jev:
+  threshold: 0.5
 ---
 
 ## Why

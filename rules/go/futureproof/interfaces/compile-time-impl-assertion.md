@@ -2,9 +2,13 @@
 severity: info
 detect: judge
 falsePositives:
-    - the type is passed to a function taking the interface in the same package, which already checks it
-    - an unexported helper type with a single local use
-    - the interface is not known to the implementing package
+  - >-
+    the type is passed to a function taking the interface in the same package,
+    which already checks it
+  - an unexported helper type with a single local use
+  - the interface is not known to the implementing package
+jev:
+  threshold: 0.49
 ---
 
 ## Why

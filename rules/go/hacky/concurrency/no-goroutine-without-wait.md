@@ -2,9 +2,15 @@
 severity: major
 detect: judge
 falsePositives:
-    - a long-lived background loop started from main or a Start method that has a matching Stop
-    - a goroutine that reports through a channel the caller reads
-    - fire-and-forget by design with the error handled and logged inside the goroutine
+  - >-
+    a long-lived background loop started from main or a Start method that has a
+    matching Stop
+  - a goroutine that reports through a channel the caller reads
+  - >-
+    fire-and-forget by design with the error handled and logged inside the
+    goroutine
+jev:
+  threshold: 0.5
 ---
 
 ## Why

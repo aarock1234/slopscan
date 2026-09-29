@@ -2,9 +2,17 @@
 severity: minor
 detect: judge
 falsePositives:
-    - switches over open types such as `string` or `number`, where a default branch is the only way to finish
-    - a switch whose default already assigns the value to `never` or calls an `assertNever` helper
-    - a switch that intentionally handles a subset and falls through to shared behavior for everything else
+  - >-
+    switches over open types such as `string` or `number`, where a default
+    branch is the only way to finish
+  - >-
+    a switch whose default already assigns the value to `never` or calls an
+    `assertNever` helper
+  - >-
+    a switch that intentionally handles a subset and falls through to shared
+    behavior for everything else
+jev:
+  threshold: 0.48
 ---
 
 ## Why

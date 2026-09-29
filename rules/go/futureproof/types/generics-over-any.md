@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a collection that genuinely mixes unrelated types
-    - an interface used only for behavior, with no assertion back to a concrete type
-    - the caller never needs the concrete type again
+  - a collection that genuinely mixes unrelated types
+  - >-
+    an interface used only for behavior, with no assertion back to a concrete
+    type
+  - the caller never needs the concrete type again
+jev:
+  threshold: 0.47
 ---
 
 ## Why

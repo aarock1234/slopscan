@@ -2,9 +2,18 @@
 severity: info
 detect: judge
 falsePositives:
-    - a schema shared by several modules and placed in a module named for the domain concept it describes, such as `user.schema.ts` next to `user.service.ts`
-    - schemas that are the public contract of a package and are grouped deliberately for export
-    - a schema moved into its own file because it is large, when it stays in the same feature directory
+  - >-
+    a schema shared by several modules and placed in a module named for the
+    domain concept it describes, such as `user.schema.ts` next to
+    `user.service.ts`
+  - >-
+    schemas that are the public contract of a package and are grouped
+    deliberately for export
+  - >-
+    a schema moved into its own file because it is large, when it stays in the
+    same feature directory
+jev:
+  threshold: 0.59
 ---
 
 ## Why

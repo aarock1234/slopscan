@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a package that constructs several types, where NewX disambiguates
-    - package main
-    - a constructor for a secondary type when New is already taken by the primary one
+  - 'a package that constructs several types, where NewX disambiguates'
+  - package main
+  - >-
+    a constructor for a secondary type when New is already taken by the primary
+    one
+jev:
+  threshold: 0.49
 ---
 
 ## Why

@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - conventional short names in tiny scopes, such as `i` in a counting loop, `e` in a catch, `x` in a one-line arrow, or `T` as a type parameter
-    - domain abbreviations that are standard in the codebase, such as `db`, `req`, `res`, `ctx`, `id`, or `url`
-    - names that match an external API or schema field the code has to mirror
+  - >-
+    conventional short names in tiny scopes, such as `i` in a counting loop, `e`
+    in a catch, `x` in a one-line arrow, or `T` as a type parameter
+  - >-
+    domain abbreviations that are standard in the codebase, such as `db`, `req`,
+    `res`, `ctx`, `id`, or `url`
+  - names that match an external API or schema field the code has to mirror
+jev:
+  threshold: 0.49
 ---
 
 ## Why

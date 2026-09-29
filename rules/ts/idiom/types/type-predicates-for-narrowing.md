@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - boolean functions that answer a business question rather than a type question, such as `isActive(user)` or `hasPermission(user, action)`
-    - a check that is used once, inline, and never followed by a cast
-    - functions that already declare `value is T` or `asserts value is T`
+  - >-
+    boolean functions that answer a business question rather than a type
+    question, such as `isActive(user)` or `hasPermission(user, action)`
+  - 'a check that is used once, inline, and never followed by a cast'
+  - functions that already declare `value is T` or `asserts value is T`
+jev:
+  threshold: 0.5
 ---
 
 ## Why

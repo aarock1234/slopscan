@@ -2,9 +2,17 @@
 severity: info
 detect: judge
 falsePositives:
-    - a short trailing comment on a single value inside an object or array literal, such as a unit or a magic number's meaning
-    - 'directive comments such as `eslint-disable` or `@ts-expect-error`, which must sit where the tool expects them'
-    - a comment on a line of its own inside a function body that explains the following statement
+  - >-
+    a short trailing comment on a single value inside an object or array
+    literal, such as a unit or a magic number's meaning
+  - >-
+    directive comments such as `eslint-disable` or `@ts-expect-error`, which
+    must sit where the tool expects them
+  - >-
+    a comment on a line of its own inside a function body that explains the
+    following statement
+jev:
+  threshold: 0.6
 ---
 
 ## Why

@@ -2,10 +2,21 @@
 severity: minor
 detect: judge
 falsePositives:
-    - asserting that a collaborator at a boundary received the right call, such as the mailer being sent the right message, when that call is the observable outcome
-    - calling an unexported or private pure function directly and asserting on its return value
-    - reaching into unexported fields to set up state before exercising the public behavior
-    - asserting call counts for behavior the contract promises, such as a cache hitting the loader exactly once
+  - >-
+    asserting that a collaborator at a boundary received the right call, such as
+    the mailer being sent the right message, when that call is the observable
+    outcome
+  - >-
+    calling an unexported or private pure function directly and asserting on its
+    return value
+  - >-
+    reaching into unexported fields to set up state before exercising the public
+    behavior
+  - >-
+    asserting call counts for behavior the contract promises, such as a cache
+    hitting the loader exactly once
+jev:
+  threshold: 0.54
 ---
 
 ## Why

@@ -2,9 +2,17 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a single `if` with an `else` where both branches are one or two lines and neither is an error path
-    - branches that must run cleanup or logging before returning, where flattening would duplicate that code
-    - a `switch` or a chain of `if` returning a value per case, which is already flat
+  - >-
+    a single `if` with an `else` where both branches are one or two lines and
+    neither is an error path
+  - >-
+    branches that must run cleanup or logging before returning, where flattening
+    would duplicate that code
+  - >-
+    a `switch` or a chain of `if` returning a value per case, which is already
+    flat
+jev:
+  threshold: 0.49
 ---
 
 ## Why

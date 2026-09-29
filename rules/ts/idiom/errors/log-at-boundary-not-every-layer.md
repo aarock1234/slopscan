@@ -2,9 +2,17 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a catch that logs and then handles the error without rethrowing, such as falling back to a default or skipping one item in a batch
-    - the outermost handler, controller, job runner, or CLI entrypoint, which is the boundary and should log
-    - a catch that adds context by wrapping the error in a typed error before rethrowing, without logging
+  - >-
+    a catch that logs and then handles the error without rethrowing, such as
+    falling back to a default or skipping one item in a batch
+  - >-
+    the outermost handler, controller, job runner, or CLI entrypoint, which is
+    the boundary and should log
+  - >-
+    a catch that adds context by wrapping the error in a typed error before
+    rethrowing, without logging
+jev:
+  threshold: 0.51
 ---
 
 ## Why

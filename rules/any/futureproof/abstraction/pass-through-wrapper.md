@@ -3,10 +3,18 @@ severity: minor
 detect: judge
 confirm: callCount
 falsePositives:
-    - a method that exists to satisfy an interface or adapt one signature to another
-    - a wrapper that is the package's public surface over an internal or third-party dependency, so callers do not import the dependency
-    - a wrapper that adds something, such as a default argument, a conversion, error context, logging, or caching
-    - functions with several callers, where the shared name is the point
+  - >-
+    a method that exists to satisfy an interface or adapt one signature to
+    another
+  - >-
+    a wrapper that is the package's public surface over an internal or
+    third-party dependency, so callers do not import the dependency
+  - >-
+    a wrapper that adds something, such as a default argument, a conversion,
+    error context, logging, or caching
+  - 'functions with several callers, where the shared name is the point'
+jev:
+  threshold: 0.49
 ---
 
 ## Why

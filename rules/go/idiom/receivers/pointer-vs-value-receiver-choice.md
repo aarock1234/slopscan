@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - small immutable value types such as enums and thin wrappers on value receivers
-    - a type that is deliberately copied on every call and documented as such
-    - methods on named map, slice, or channel types
+  - >-
+    small immutable value types such as enums and thin wrappers on value
+    receivers
+  - a type that is deliberately copied on every call and documented as such
+  - 'methods on named map, slice, or channel types'
+jev:
+  threshold: 0.5
 ---
 
 ## Why

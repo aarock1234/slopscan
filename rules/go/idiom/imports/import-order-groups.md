@@ -2,9 +2,9 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a file with a single import or a single group
-    - generated code
-    - an import block the diff did not touch
+  - a file with a single import or a single group
+  - generated code
+  - an import block the diff did not touch
 ---
 
 ## Why

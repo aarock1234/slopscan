@@ -2,9 +2,15 @@
 severity: minor
 detect: judge
 falsePositives:
-    - awaits where a later call uses the result of an earlier one, or where order matters for side effects such as writes
-    - operations against a resource that must not see concurrent calls, such as a single database transaction or a rate-limited API
-    - a sequence deliberately kept serial with a comment explaining why
+  - >-
+    awaits where a later call uses the result of an earlier one, or where order
+    matters for side effects such as writes
+  - >-
+    operations against a resource that must not see concurrent calls, such as a
+    single database transaction or a rate-limited API
+  - a sequence deliberately kept serial with a comment explaining why
+jev:
+  threshold: 0.53
 ---
 
 ## Why

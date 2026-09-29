@@ -2,9 +2,13 @@
 severity: minor
 detect: judge
 falsePositives:
-    - a channel that hands off ownership or coordinates goroutines, such as a work queue or cancellation
-    - a semaphore channel that bounds concurrency rather than guarding a value
-    - an actor loop that owns the state by design and is documented as such
+  - >-
+    a channel that hands off ownership or coordinates goroutines, such as a work
+    queue or cancellation
+  - a semaphore channel that bounds concurrency rather than guarding a value
+  - an actor loop that owns the state by design and is documented as such
+jev:
+  threshold: 0.5
 ---
 
 ## Why

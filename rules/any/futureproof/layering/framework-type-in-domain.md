@@ -2,23 +2,25 @@
 severity: major
 detect: judge
 ignore:
-    - '**/handlers/**'
-    - '**/handler/**'
-    - '**/api/**'
-    - '**/routes/**'
-    - '**/router/**'
-    - '**/controllers/**'
-    - '**/middleware/**'
-    - '**/transport/**'
-    - '**/http/**'
-    - '**/*.handler.ts'
-    - '**/*.controller.ts'
-    - '**/*.route.ts'
-    - '**/main.go'
-    - '**/cmd/**'
-    - '**/*.test.ts'
-    - '**/*.spec.ts'
-    - '**/*_test.go'
+  - '**/handlers/**'
+  - '**/handler/**'
+  - '**/api/**'
+  - '**/routes/**'
+  - '**/router/**'
+  - '**/controllers/**'
+  - '**/middleware/**'
+  - '**/transport/**'
+  - '**/http/**'
+  - '**/*.handler.ts'
+  - '**/*.controller.ts'
+  - '**/*.route.ts'
+  - '**/main.go'
+  - '**/cmd/**'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*_test.go'
+jev:
+  threshold: 0.49
 ---
 
 ## Why

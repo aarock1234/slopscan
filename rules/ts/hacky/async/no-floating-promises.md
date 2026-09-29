@@ -2,9 +2,17 @@
 severity: major
 detect: judge
 falsePositives:
-    - a promise explicitly discarded with `void` and a comment saying why, such as fire-and-forget telemetry
-    - a promise stored in a variable or array and awaited later, including through `Promise.all`
-    - a call that returns something other than a promise, when the return type is visible in the diff or obvious from the name
+  - >-
+    a promise explicitly discarded with `void` and a comment saying why, such as
+    fire-and-forget telemetry
+  - >-
+    a promise stored in a variable or array and awaited later, including through
+    `Promise.all`
+  - >-
+    a call that returns something other than a promise, when the return type is
+    visible in the diff or obvious from the name
+jev:
+  threshold: 0.48
 ---
 
 ## Why

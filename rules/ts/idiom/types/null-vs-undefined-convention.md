@@ -2,9 +2,13 @@
 severity: info
 detect: judge
 falsePositives:
-    - values that come from an external API, database column, or library that itself uses `null`, where mirroring it is the honest type
-    - React state initialized with `null` to mean not yet loaded or no selection
-    - optional properties declared with `?`, which are `undefined` by definition
+  - >-
+    values that come from an external API, database column, or library that
+    itself uses `null`, where mirroring it is the honest type
+  - React state initialized with `null` to mean not yet loaded or no selection
+  - 'optional properties declared with `?`, which are `undefined` by definition'
+jev:
+  threshold: 0.49
 ---
 
 ## Why
