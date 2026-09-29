@@ -94,6 +94,17 @@ const verdictSchema = z.discriminatedUnion('verdict', [
 
 type Verdict = z.infer<typeof verdictSchema>;
 
+// what the model is asked for: the same three fields flat, because structured output providers reject a union at the
+// schema root. a confirmed answer with no quote becomes uncertain when it is read back into a Verdict.
+const modelVerdictSchema = z.object({
+	verdict: z.enum(VerdictKind),
+	reason: reasonSchema,
+	// the offending line copied verbatim from the code, or null when not confirming
+	quote: z.string().nullable(),
+});
+
+type ModelVerdict = z.infer<typeof modelVerdictSchema>;
+
 // what a check becomes when the model spends every step on tools and never answers
 const OUT_OF_STEPS: Verdict = {
 	verdict: VerdictKind.UNCERTAIN,
@@ -225,7 +236,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 			prepareStep: ({ stepNumber }) =>
 				stepNumber >= options.config.maxSteps - 1 ? { toolChoice: 'none' } : undefined,
 			output: Output.object({
-				schema: verdictSchema,
+				schema: modelVerdictSchema,
 				name: 'verdict',
 			}),
 			temperature: 0,
@@ -233,13 +244,14 @@ export function createVerifier(options: VerifierOptions): Verifier {
 		});
 
 		summary.inputTokens += result.usage.inputTokens ?? 0;
-		const verdict = readVerdict(result);
+		const answer = readAnswer(result);
 
-		if (verdict === undefined) {
+		if (answer === undefined) {
 			// not cached, so a later run with more steps gets another try
 			return OUT_OF_STEPS;
 		}
 
+		const verdict = toVerdict(answer);
 		await writeFile(cachePath, JSON.stringify(verdict, null, 2));
 
 		return verdict;
@@ -283,8 +295,30 @@ function repositoryTools(repo: string, tracked: ReadonlySet<string>) {
 	};
 }
 
+function toVerdict(answer: ModelVerdict): Verdict {
+	if (answer.verdict !== VerdictKind.CONFIRMED) {
+		return {
+			verdict: answer.verdict,
+			reason: answer.reason,
+		};
+	}
+
+	if (answer.quote === null) {
+		return {
+			verdict: VerdictKind.UNCERTAIN,
+			reason: `${answer.reason} (confirmed without quoting a line)`,
+		};
+	}
+
+	return {
+		verdict: VerdictKind.CONFIRMED,
+		reason: answer.reason,
+		quote: answer.quote,
+	};
+}
+
 // the sdk throws when a run ends without the structured answer; that is an outcome here, not a crash
-function readVerdict(result: { readonly output: Verdict }): Verdict | undefined {
+function readAnswer(result: { readonly output: ModelVerdict }): ModelVerdict | undefined {
 	try {
 		return result.output;
 	} catch (error) {
