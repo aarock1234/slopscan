@@ -10,7 +10,7 @@ falsePositives:
     re-exports that mix types and values and already mark the types with an
     inline `type` modifier
 jev:
-  threshold: 0.35
+  threshold: 0.31
 ---
 
 ## Why

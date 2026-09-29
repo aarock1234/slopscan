@@ -8,7 +8,7 @@ falsePositives:
   - React state initialized with `null` to mean not yet loaded or no selection
   - 'optional properties declared with `?`, which are `undefined` by definition'
 jev:
-  threshold: 0.49
+  threshold: 0.5
 ---
 
 ## Why

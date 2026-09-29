@@ -17,7 +17,7 @@ falsePositives:
     a top-level boundary that maps any failure to one response, such as an http
     handler or a job runner
 jev:
-  threshold: 0.51
+  threshold: 0.5
 ---
 
 ## Why

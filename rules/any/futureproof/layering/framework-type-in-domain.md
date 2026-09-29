@@ -26,7 +26,7 @@ falsePositives:
     about a server's request and response types reaching a service
   - 'a package whose purpose is one protocol, such as an RDAP or WHOIS client'
 jev:
-  threshold: 0.48
+  threshold: 0.46
 ---
 
 ## Why

@@ -5,7 +5,7 @@ falsePositives:
   - the variable is read again after its address is taken
   - the module targets a Go version older than 1.26
 jev:
-  threshold: 0.48
+  threshold: 0.46
 ---
 
 ## Why

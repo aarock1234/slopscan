@@ -10,7 +10,7 @@ falsePositives:
     `res`, `ctx`, `id`, or `url`
   - names that match an external API or schema field the code has to mirror
 jev:
-  threshold: 0.49
+  threshold: 0.42
 ---
 
 ## Why

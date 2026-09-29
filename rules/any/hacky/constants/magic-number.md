@@ -25,7 +25,7 @@ falsePositives:
     numbers in a plain arithmetic formula whose surrounding function name
     explains them, such as a percentage or area calculation
 jev:
-  threshold: 0.36
+  threshold: 0.39
 ---
 
 ## Why

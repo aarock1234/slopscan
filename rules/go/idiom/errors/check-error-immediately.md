@@ -6,7 +6,7 @@ falsePositives:
   - an error deliberately collected and checked after a loop or a Wait
   - a second call that does not depend on the first result
 jev:
-  threshold: 0.51
+  threshold: 0.5
 ---
 
 ## Why

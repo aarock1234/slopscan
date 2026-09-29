@@ -8,7 +8,7 @@ falsePositives:
   - an unexported helper type with a single local use
   - the interface is not known to the implementing package
 jev:
-  threshold: 0.49
+  threshold: 0.48
 ---
 
 ## Why

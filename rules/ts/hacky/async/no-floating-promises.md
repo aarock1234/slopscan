@@ -12,7 +12,7 @@ falsePositives:
     a call that returns something other than a promise, when the return type is
     visible in the diff or obvious from the name
 jev:
-  threshold: 0.48
+  threshold: 0.46
 ---
 
 ## Why

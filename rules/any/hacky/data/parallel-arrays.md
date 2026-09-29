@@ -15,7 +15,7 @@ falsePositives:
     row and a data row
   - hot loops where a struct-of-arrays layout is the point and the code says so
 jev:
-  threshold: 0.34
+  threshold: 0.28
 ---
 
 ## Why

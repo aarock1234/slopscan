@@ -14,7 +14,7 @@ falsePositives:
     error context, logging, or caching
   - 'functions with several callers, where the shared name is the point'
 jev:
-  threshold: 0.49
+  threshold: 0.51
 ---
 
 ## Why

@@ -17,7 +17,7 @@ falsePositives:
     a display-only branch that picks copy or an icon from a category the record
     already carries
 jev:
-  threshold: 0.24
+  threshold: 0.29
 ---
 
 ## Why

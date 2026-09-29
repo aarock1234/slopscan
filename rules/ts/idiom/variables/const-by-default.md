@@ -10,7 +10,7 @@ falsePositives:
     down, when merging it into a `const` would need a nested ternary or an IIFE
   - loop counters in a classic `for` statement
 jev:
-  threshold: 0.49
+  threshold: 0.5
 ---
 
 ## Why

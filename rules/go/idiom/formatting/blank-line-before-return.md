@@ -8,7 +8,7 @@ falsePositives:
     body
   - a one-line function body
 jev:
-  threshold: 0.76
+  threshold: 0.87
 ---
 
 ## Why

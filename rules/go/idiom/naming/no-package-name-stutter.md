@@ -6,7 +6,7 @@ falsePositives:
   - exported names in package main
   - a name that would become a keyword or ambiguous when the prefix is dropped
 jev:
-  threshold: 0.47
+  threshold: 0.44
 ---
 
 ## Why

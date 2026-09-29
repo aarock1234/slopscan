@@ -17,7 +17,7 @@ falsePositives:
     a deliberately small, documented lexicon for a fixed protocol, such as
     commit message prefixes
 jev:
-  threshold: 0.5
+  threshold: 0.51
 ---
 
 ## Why

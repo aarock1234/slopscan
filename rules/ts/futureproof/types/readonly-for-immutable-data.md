@@ -8,7 +8,7 @@ falsePositives:
     types generated from a schema or an ORM where the modifier is not under the
     author's control
 jev:
-  threshold: 0.51
+  threshold: 0.52
 ---
 
 ## Why

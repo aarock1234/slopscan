@@ -11,7 +11,7 @@ falsePositives:
     a constructor for a secondary type when New is already taken by the primary
     one
 jev:
-  threshold: 0.5
+  threshold: 0.49
 ---
 
 ## Why

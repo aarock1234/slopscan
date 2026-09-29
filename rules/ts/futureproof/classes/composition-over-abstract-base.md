@@ -12,7 +12,7 @@ falsePositives:
     a hierarchy that is one level deep and whose subclasses differ only in the
     abstract method they implement
 jev:
-  threshold: 0.55
+  threshold: 0.56
 ---
 
 ## Why

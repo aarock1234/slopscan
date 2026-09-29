@@ -10,7 +10,7 @@ falsePositives:
   - 'a type guard or predicate, whose name is the point'
   - 'exported functions, which may have callers outside this repository'
 jev:
-  threshold: 0.47
+  threshold: 0.46
 ---
 
 ## Why

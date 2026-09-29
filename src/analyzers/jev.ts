@@ -1,7 +1,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import type { ChoiceCriteria, ChoiceQuestion, JsonValue, ScoreQuestion, TypeSafeClient } from '@typesafe-ai/sdk';
+import { BadRequestError } from '@typesafe-ai/sdk';
+import type { ChoiceCriteria, ChoiceQuestion, JsonValue, TypeSafeClient } from '@typesafe-ai/sdk';
 import { z } from 'zod';
 
 import type { Analyzer } from '../analyzer.js';
@@ -13,6 +14,8 @@ import { detectLang } from '../lang.js';
 import type { Lang } from '../lang.js';
 import { Detect } from '../rule.js';
 import type { JudgeRule, Rule } from '../rule.js';
+import { mapConcurrent } from '../shared/concurrency.js';
+import { logger } from '../shared/log.js';
 import { countRepo, extractUnits } from '../units.js';
 import type { RepoCounts, Unit } from '../units.js';
 
@@ -46,6 +49,7 @@ export type Jev = {
 };
 
 export type JevOptions = {
+	// created with the jev model as its default
 	client: TypeSafeClient;
 	config: JevConfig;
 	repo: string;
@@ -62,12 +66,28 @@ export const Verdict = {
 
 export type Verdict = (typeof Verdict)[keyof typeof Verdict];
 
-export type QuestionOptions = {
-	notApplicable: boolean;
+// one rule's answer about one unit
+export type Judgment = {
+	unit: Unit;
+	rule: JudgeRule;
+	probability: number;
+	confidence: number;
 };
 
-// one Jev call per changed function: the function, computed facts about it, and the names around it in its file
-// as state; every applicable judge rule with a measured threshold as a parallel contrast question.
+export type Judged = {
+	judgments: Judgment[];
+	calls: number;
+	inputTokens: number;
+};
+
+// estimated tokens one call may carry. the service rejects requests somewhere past 60k and the estimate runs
+// low on code, so the budget leaves room; a call it still rejects is split in two and asked again.
+const CALL_TOKEN_BUDGET = 40_000;
+const CHARS_PER_TOKEN = 4;
+const CONCURRENT_CALLS = 4;
+
+// judges the changed units of each file with every judge rule that has a measured threshold, several units per
+// call, and keeps the answers over the rule's threshold as findings
 export function createJev(options: JevOptions): Jev {
 	const summary: JevSummary = { model: options.config.model, units: 0, calls: 0, inputTokens: 0 };
 	const counts = new Map<Lang, Promise<RepoCounts>>();
@@ -103,55 +123,160 @@ export function createJev(options: JevOptions): Jev {
 		);
 		summary.units += units.length;
 
-		const perUnit = await Promise.all(units.map(unit => judgeUnit(unit, change.lang, judgeRules)));
+		const judged = await judge(options.client, change.lang, units, judgeRules);
+		summary.calls += judged.calls;
+		summary.inputTokens += judged.inputTokens;
 
-		return perUnit.flat();
-	}
-
-	async function judgeUnit(unit: Unit, lang: Lang, rules: readonly JudgeRule[]): Promise<Finding[]> {
-		const { answers, usage } = await options.client.systemOne({
-			model: options.config.model,
-			state: {
-				...codeState(lang, unit),
-				rules: Object.fromEntries(rules.map(rule => [rule.id, ruleState(rule)])),
-			},
-			questions: Object.fromEntries(
-				rules.map(rule => [rule.id, contrastQuestion({ notApplicable: true }, `rules["${rule.id}"]`)])
-			),
-		});
-
-		summary.calls += 1;
-		summary.inputTokens += usage.input_tokens;
-
-		return rules.flatMap(rule => {
-			const answer = answers[rule.id];
-
-			if (answer?.type !== 'choice') {
-				return [];
-			}
-
-			const probability = answer.probabilities[Verdict.VIOLATES] ?? 0;
-
-			if (probability < (rule.jevThreshold ?? Number.POSITIVE_INFINITY)) {
-				return [];
-			}
-
-			return [
-				{
-					ruleId: rule.id,
-					path: unit.path,
-					line: unit.line,
-					endLine: unit.endLine,
-					quote: unit.header,
-					message: rule.message,
-					confidence: answer.confidence,
-					origin: Origin.JEV,
-				},
-			];
-		});
+		return judged.judgments
+			.filter(judgment => judgment.probability >= (judgment.rule.jevThreshold ?? Number.POSITIVE_INFINITY))
+			.map(toFinding);
 	}
 
 	return { analyze, summary: () => ({ ...summary }) };
+}
+
+// asks every rule about every unit, several units per call with one copy of the rulebook. the rulebook costs
+// more than the code it judges, and Jev answers a question the same whether four or forty share the request:
+// on the rule fixtures, eight units per call moved P(violates) by 0.008 on average against 0.002 of jitter.
+export async function judge(
+	client: TypeSafeClient,
+	lang: Lang,
+	units: readonly Unit[],
+	rules: readonly JudgeRule[]
+): Promise<Judged> {
+	const rulesState = Object.fromEntries(rules.map((rule, index) => [ruleKey(index), ruleState(rule)]));
+	const judged: Judged = { judgments: [], calls: 0, inputTokens: 0 };
+
+	await mapConcurrent(pack(units, rules, rulesState), batch => ask(client, lang, batch, rules, rulesState, judged), {
+		concurrency: CONCURRENT_CALLS,
+	});
+
+	return judged;
+}
+
+async function ask(
+	client: TypeSafeClient,
+	lang: Lang,
+	batch: readonly Unit[],
+	rules: readonly JudgeRule[],
+	rulesState: Record<string, JsonValue>,
+	judged: Judged
+): Promise<void> {
+	const questions: Record<string, ChoiceQuestion> = Object.fromEntries(
+		batch.flatMap((_, u) =>
+			rules.map((_rule, r) => [
+				questionKey(u, r),
+				contrastQuestion(`rules.${ruleKey(r)}`, `units.${unitKey(u)}.code`),
+			])
+		)
+	);
+
+	try {
+		const { answers, usage } = await client.systemOne({
+			state: {
+				language: languageName(lang),
+				units: Object.fromEntries(batch.map((unit, u) => [unitKey(u), unitState(unit)])),
+				rules: rulesState,
+			},
+			questions,
+		});
+
+		judged.calls += 1;
+		judged.inputTokens += usage.input_tokens;
+
+		batch.forEach((unit, u) => {
+			rules.forEach((rule, r) => {
+				const answer = answers[questionKey(u, r)];
+
+				if (answer?.type === 'choice') {
+					judged.judgments.push({
+						unit,
+						rule,
+						probability: answer.probabilities[Verdict.VIOLATES] ?? 0,
+						confidence: answer.confidence,
+					});
+				}
+			});
+		});
+	} catch (error) {
+		if (!(error instanceof BadRequestError)) {
+			throw error;
+		}
+
+		const [only] = batch;
+
+		if (batch.length === 1 && only !== undefined) {
+			logger.warn(
+				{ path: only.path, line: only.line, lines: only.facts.lines },
+				'unit too large for one jev call; skipped'
+			);
+
+			return;
+		}
+
+		// the estimate ran low for this batch; halve it and ask again
+		const half = Math.ceil(batch.length / 2);
+		await ask(client, lang, batch.slice(0, half), rules, rulesState, judged);
+		await ask(client, lang, batch.slice(half), rules, rulesState, judged);
+	}
+}
+
+// fills calls up to the token budget in file order: the rulebook once, then each unit with its questions
+function pack(units: readonly Unit[], rules: readonly JudgeRule[], rulesState: Record<string, JsonValue>): Unit[][] {
+	const fixed = estimateTokens(JSON.stringify(rulesState));
+	const perQuestion = estimateTokens(JSON.stringify(contrastQuestion('rules.r00', 'units.u00.code')));
+	const batches: Unit[][] = [];
+	let current: Unit[] = [];
+	let used = fixed;
+
+	for (const unit of units) {
+		const cost = estimateTokens(JSON.stringify(unitState(unit))) + rules.length * perQuestion;
+
+		if (current.length > 0 && used + cost > CALL_TOKEN_BUDGET) {
+			batches.push(current);
+			current = [];
+			used = fixed;
+		}
+
+		current.push(unit);
+		used += cost;
+	}
+
+	if (current.length > 0) {
+		batches.push(current);
+	}
+
+	return batches;
+}
+
+function estimateTokens(text: string): number {
+	return Math.ceil(text.length / CHARS_PER_TOKEN);
+}
+
+// short keys keep every reference in every question to a few tokens; the rule's id travels inside its state
+function ruleKey(index: number): string {
+	return `r${index}`;
+}
+
+function unitKey(index: number): string {
+	return `u${index}`;
+}
+
+function questionKey(unit: number, rule: number): string {
+	return `${unitKey(unit)}.${ruleKey(rule)}`;
+}
+
+function toFinding({ unit, rule, confidence }: Judgment): Finding {
+	return {
+		ruleId: rule.id,
+		path: unit.path,
+		line: unit.line,
+		endLine: unit.endLine,
+		quote: unit.header,
+		message: rule.message,
+		confidence,
+		origin: Origin.JEV,
+	};
 }
 
 // a unit is judged when this change touched any of its lines
@@ -171,11 +296,10 @@ async function trackedFiles(repo: string): Promise<string[]> {
 	return stdout.split('\0').filter(path => path.length > 0);
 }
 
-// what the model sees about the code under judgment: the unit, facts about it, and the names around it in
-// its file, so questions about colocation, wrappers, and reuse have something to check against
-export function codeState(lang: Lang, unit: Unit): Record<string, JsonValue> {
+// what the model sees about one unit: the code, facts about it, and the names around it in its file, so
+// questions about colocation, wrappers, and reuse have something to check against
+export function unitState(unit: Unit): Record<string, JsonValue> {
 	return {
-		language: languageName(lang),
 		code: unit.source,
 		facts: { ...unit.facts },
 		file: { path: unit.path, imports: [...unit.imports], declarations: [...unit.declarations] },
@@ -196,55 +320,28 @@ export function ruleState(rule: JudgeRule): Record<string, JsonValue> {
 	};
 }
 
-// the contrast question over `code` and a rule in the state. `ref` is the rule's path in the state, `rule` when
-// it is alone and `rules["<id>"]` when several ride in one call.
-export function contrastQuestion(options: QuestionOptions, ref = 'rule'): ChoiceQuestion {
+// the three-way contrast between a piece of code and a rule, both named by their path in the state. terse on
+// purpose: the wording is repeated once per unit and rule, and the short form judged the fixtures the same as
+// a long one while firing less on rules that did not apply.
+export function contrastQuestion(ref = 'rule', code = 'code'): ChoiceQuestion {
 	const criteria: ChoiceCriteria = {
-		[Verdict.VIOLATES]: `code has the same problem as ${ref}.examples.bad`,
-		[Verdict.FOLLOWS]: `code is written the way ${ref}.examples.good is, or is an accepted exception in ${ref}.notAViolation`,
-		...(options.notApplicable && {
-			[Verdict.NOT_APPLICABLE]: 'the construct or situation the rule is about does not appear in code',
-		}),
+		[Verdict.VIOLATES]: `same problem as ${ref}.examples.bad`,
+		[Verdict.FOLLOWS]: `like ${ref}.examples.good, or fits ${ref}.notAViolation`,
+		[Verdict.NOT_APPLICABLE]: `${ref}'s subject does not occur in ${code}`,
 	};
 
 	return {
 		type: 'choice',
-		instructions: `With respect to \`${ref}\`, which set does \`code\` belong with?`,
+		instructions: `Judge ${code} by ${ref}.`,
 		criteria,
 	};
 }
 
-// the same judgment as an ordered rubric. the answer is a probability per level plus a confidence, so callers
-// can read "how bad" and "how sure" separately instead of one number.
-export const RubricLevel = {
-	NOT_APPLICABLE: 0,
-	FOLLOWS: 1,
-	BORDERLINE: 2,
-	VIOLATES: 3,
-	SEVERE: 4,
-} as const;
+export type QuestionOptions = {
+	notApplicable: boolean;
+};
 
-export function rubricQuestion(ref = 'rule'): ScoreQuestion {
-	return {
-		type: 'score',
-		instructions: `How does \`code\` stand against \`${ref}\`? Use \`facts\` for anything countable.`,
-		criteria: [
-			{
-				summary: 'not applicable',
-				signals: 'the construct or situation the rule is about does not appear in code',
-			},
-			{
-				summary: 'follows the rule',
-				signals: `code is written the way ${ref}.examples.good is, or fits ${ref}.notAViolation`,
-			},
-			{ summary: 'borderline', signals: 'a careful reviewer might mention it, or might not' },
-			{ summary: 'violates the rule', signals: `code has the same problem as ${ref}.examples.bad` },
-			{ summary: 'severe violation', signals: 'the problem is present and will mislead a reader or cause a bug' },
-		],
-	};
-}
-
-// the rule as a structured rubric inside the question, with only the code in the state
+// the rule as a structured rubric inside the question, with only the code in the state; kept for the shape eval
 export function ruleQuestion(rule: JudgeRule, options: QuestionOptions): ChoiceQuestion {
 	const criteria: ChoiceCriteria = {
 		[Verdict.VIOLATES]: {

@@ -12,7 +12,7 @@ falsePositives:
     a `switch` or a chain of `if` returning a value per case, which is already
     flat
 jev:
-  threshold: 0.49
+  threshold: 0.48
 ---
 
 ## Why

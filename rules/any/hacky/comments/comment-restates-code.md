@@ -5,7 +5,7 @@ falsePositives:
   - 'doc comments on exported symbols that state the contract, even when short'
   - 'comments explaining why, a constraint, or a non-obvious consequence'
 jev:
-  threshold: 0.55
+  threshold: 0.54
 ---
 
 ## Why

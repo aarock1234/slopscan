@@ -8,7 +8,7 @@ falsePositives:
     type
   - the caller never needs the concrete type again
 jev:
-  threshold: 0.47
+  threshold: 0.46
 ---
 
 ## Why

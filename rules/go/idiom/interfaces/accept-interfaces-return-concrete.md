@@ -8,7 +8,7 @@ falsePositives:
     type is an implementation detail
   - a parameter that needs unexported fields of the concrete type
 jev:
-  threshold: 0.47
+  threshold: 0.45
 ---
 
 ## Why

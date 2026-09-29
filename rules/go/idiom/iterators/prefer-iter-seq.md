@@ -10,7 +10,7 @@ falsePositives:
     a callback that needs to return an error per element (iter.Seq2 with an
     error value)
 jev:
-  threshold: 0.5
+  threshold: 0.49
 ---
 
 ## Why

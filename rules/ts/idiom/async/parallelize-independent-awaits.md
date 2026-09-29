@@ -10,7 +10,7 @@ falsePositives:
     single database transaction or a rate-limited API
   - a sequence deliberately kept serial with a comment explaining why
 jev:
-  threshold: 0.53
+  threshold: 0.52
 ---
 
 ## Why

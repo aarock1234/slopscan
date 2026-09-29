@@ -6,7 +6,7 @@ falsePositives:
   - 'a deprecation notice starting with "Deprecated:"'
   - a comment on a declaration inside a grouped var or const block
 jev:
-  threshold: 0.53
+  threshold: 0.56
 ---
 
 ## Why

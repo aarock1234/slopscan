@@ -85,7 +85,7 @@ async function probability(client: TypeSafeClient, rule: JudgeRule, example: Exa
 		Array.from({ length: REPEATS }, () =>
 			client.systemOne({
 				state: { language: languageName(example.lang), code: example.source, rule: ruleState(heldOut) },
-				questions: { verdict: contrastQuestion({ notApplicable: true }) },
+				questions: { verdict: contrastQuestion() },
 			})
 		)
 	);

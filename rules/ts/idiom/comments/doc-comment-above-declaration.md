@@ -12,7 +12,7 @@ falsePositives:
     a comment on a line of its own inside a function body that explains the
     following statement
 jev:
-  threshold: 0.6
+  threshold: 0.58
 ---
 
 ## Why

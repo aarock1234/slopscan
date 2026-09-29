@@ -13,7 +13,7 @@ falsePositives:
     a schema moved into its own file because it is large, when it stays in the
     same feature directory
 jev:
-  threshold: 0.8
+  threshold: 0.75
 ---
 
 ## Why

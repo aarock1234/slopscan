@@ -11,7 +11,7 @@ falsePositives:
     a pending or in-progress state that legitimately has no value yet, when the
     type says so with its own variant
 jev:
-  threshold: 0.48
+  threshold: 0.47
 ---
 
 ## Why

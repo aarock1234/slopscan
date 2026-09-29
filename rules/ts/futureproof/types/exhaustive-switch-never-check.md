@@ -12,7 +12,7 @@ falsePositives:
     a switch that intentionally handles a subset and falls through to shared
     behavior for everything else
 jev:
-  threshold: 0.48
+  threshold: 0.49
 ---
 
 ## Why

@@ -10,7 +10,7 @@ falsePositives:
     values only ever used as map keys or labels, never as a parameter or field
     type
 jev:
-  threshold: 0.51
+  threshold: 0.5
 ---
 
 ## Why
