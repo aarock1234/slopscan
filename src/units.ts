@@ -20,8 +20,9 @@ export type UnitFacts = {
 	references: number;
 };
 
-// a function, method, module-level arrow function, or top-level type declaration: the granularity a decision
-// model judges at. types are units too, or rules about shapes would never see one.
+// a function, method, module-level arrow function, top-level type, or a module-level value of some size: the
+// granularity a decision model judges at. types are units or rules about shapes would never see one; constants
+// are units or a prompt written as a string array and a grammar written as regex tables would never be seen.
 export type Unit = {
 	path: string;
 	line: number;
@@ -42,15 +43,18 @@ export type RepoCounts = {
 };
 
 type Grammar = {
+	// callables and types: always units
 	units: NapiConfig;
+	// module-level values: units when they span at least MIN_VALUE_LINES, otherwise the syntax rules' business
+	values: NapiConfig;
 	imports: NapiConfig;
 	declarations: NapiConfig;
 	calls: NapiConfig;
 	identifiers: NapiConfig;
 	// the parameter list of a unit, never one of a nested callback or a function type
 	parameters: NapiConfig;
-	// the node carrying the name when the unit itself has no `name` field
-	declarator: string;
+	// the nodes carrying the name when the unit itself has no `name` field
+	declarators: readonly string[];
 	returnsBoolean: RegExp;
 	isExported(node: SgNode, name: string): boolean;
 };
@@ -58,6 +62,7 @@ type Grammar = {
 const TOP_LEVEL_TS = { any: [{ kind: 'program' }, { kind: 'export_statement' }] };
 const CALLABLE_TS = [{ kind: 'function_declaration' }, { kind: 'method_definition' }, { kind: 'arrow_function' }];
 const CALLABLE_GO = [{ kind: 'function_declaration' }, { kind: 'method_declaration' }];
+const ARROW_DECLARATION = { kind: 'variable_declarator', has: { kind: 'arrow_function', field: 'value' } };
 
 const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 	[Lang.TS]: {
@@ -68,17 +73,14 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 				any: [
 					{ kind: 'function_declaration' },
 					{ kind: 'method_definition' },
-					{
-						kind: 'lexical_declaration',
-						inside: TOP_LEVEL_TS,
-						has: { kind: 'variable_declarator', has: { kind: 'arrow_function', field: 'value' } },
-					},
+					{ kind: 'lexical_declaration', inside: TOP_LEVEL_TS, has: ARROW_DECLARATION },
 					{ kind: 'type_alias_declaration', inside: TOP_LEVEL_TS },
 					{ kind: 'interface_declaration', inside: TOP_LEVEL_TS },
 					{ kind: 'enum_declaration', inside: TOP_LEVEL_TS },
 				],
 			},
 		},
+		values: { rule: { kind: 'lexical_declaration', inside: TOP_LEVEL_TS, not: { has: ARROW_DECLARATION } } },
 		imports: { rule: { kind: 'import_statement' } },
 		declarations: {
 			rule: {
@@ -98,13 +100,19 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 			rule: { any: [{ kind: 'identifier' }, { kind: 'property_identifier' }, { kind: 'type_identifier' }] },
 		},
 		parameters: { rule: { kind: 'formal_parameters', inside: { field: 'parameters', any: CALLABLE_TS } } },
-		declarator: 'variable_declarator',
+		declarators: ['variable_declarator'],
 		returnsBoolean: /\)\s*:\s*boolean\b/,
 		isExported: node => node.parent()?.kind() === 'export_statement',
 	},
 	[Lang.GO]: {
 		units: {
 			rule: { any: [...CALLABLE_GO, { kind: 'type_declaration', inside: { kind: 'source_file' } }] },
+		},
+		values: {
+			rule: {
+				any: [{ kind: 'var_declaration' }, { kind: 'const_declaration' }],
+				inside: { kind: 'source_file' },
+			},
 		},
 		imports: { rule: { kind: 'import_declaration' } },
 		declarations: {
@@ -124,14 +132,18 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 		},
 		// the `parameters` field, never the receiver list that precedes a method's name
 		parameters: { rule: { kind: 'parameter_list', inside: { field: 'parameters', any: CALLABLE_GO } } },
-		declarator: 'type_spec',
+		declarators: ['type_spec', 'var_spec', 'const_spec'],
 		returnsBoolean: /\)\s*(?:bool|\(bool\b)/,
 		isExported: (_node, name) => /^[A-Z]/.test(name),
 	},
 };
 
-// units longer than this are judged by nobody; a function that long is its own finding
-const MAX_UNIT_LINES = 200;
+// units longer than this are judged by nobody; a function that long is its own finding. the worst functions a
+// reviewer requests changes over run two or three hundred lines, so the cap sits well above them.
+const MAX_UNIT_LINES = 400;
+
+// a module-level value shorter than this is a number, a string, or a small object the syntax rules already see
+const MIN_VALUE_LINES = 3;
 
 // cuts one file into units, with every fact that the file alone can supply
 export function extractUnits(lang: Lang, path: string, source: string, counts: RepoCounts): Unit[] {
@@ -140,9 +152,13 @@ export function extractUnits(lang: Lang, path: string, source: string, counts: R
 	const imports = root.findAll(grammar.imports).map(node => node.text());
 	const declarations = root.findAll(grammar.declarations).map(firstLine);
 
-	return root
-		.findAll(grammar.units)
-		.filter(node => node.text().split('\n').length <= MAX_UNIT_LINES)
+	const nodes = [
+		...root.findAll(grammar.units),
+		...root.findAll(grammar.values).filter(node => lineCount(node) >= MIN_VALUE_LINES),
+	].sort((a, b) => a.range().start.line - b.range().start.line);
+
+	return nodes
+		.filter(node => lineCount(node) <= MAX_UNIT_LINES)
 		.map(node => {
 			const header = firstLine(node);
 			const name = unitName(node, grammar);
@@ -187,9 +203,10 @@ export async function countRepo(repo: string, lang: Lang, paths: readonly string
 	};
 }
 
-// the name the grammar gives the unit, or the declarator's inside it, or the header when nothing is named
+// the name the grammar gives the unit, or the first declarator's inside it, or the header when nothing is named
 function unitName(node: SgNode, grammar: Grammar): string {
-	const named = node.field('name') ?? node.find({ rule: { kind: grammar.declarator } })?.field('name');
+	const declarator = node.find({ rule: { any: grammar.declarators.map(kind => ({ kind })) } });
+	const named = node.field('name') ?? declarator?.field('name');
 
 	return named?.text() ?? firstLine(node);
 }
@@ -222,6 +239,12 @@ function countParameters(node: SgNode, grammar: Grammar): number {
 	const parameters = node.find(grammar.parameters);
 
 	return parameters === null ? 0 : parameters.children().filter(child => child.isNamed()).length;
+}
+
+function lineCount(node: SgNode): number {
+	const { start, end } = node.range();
+
+	return end.line - start.line + 1;
 }
 
 function firstLine(node: SgNode): string {

@@ -26,6 +26,13 @@ export const load = async (id: string, options: Options): Promise<User> => {
 	return { id: \`\${id}:\${attempts.length}\` };
 };
 
+const MAX = 3;
+
+export const SYSTEM_PROMPT = [
+	'You derive the legal elements a complete answer must address.',
+	'Return at most three elements per issue.',
+].join('\\n\\n');
+
 class Store {
 	get(id: string): User | undefined {
 		return id === '' ? undefined : { id };
@@ -35,7 +42,17 @@ class Store {
 
 const GO_SOURCE = `package store
 
-import "context"
+import (
+	"context"
+	"regexp"
+)
+
+var (
+	resolvedWords = regexp.MustCompile("resolved|fixed")
+	notResolved   = regexp.MustCompile("not resolved")
+)
+
+const timeout = 30
 
 type Store struct {
 	path string
@@ -51,7 +68,7 @@ func (s *Store) Has(ctx context.Context, id string) bool {
 `;
 
 describe('extractUnits', () => {
-	it('cuts a TypeScript file into functions, module-level arrows, and top-level types with their names', () => {
+	it('cuts a TypeScript file into functions, module-level arrows, top-level types, and long module-level values', () => {
 		const units = extractUnits(Lang.TS, 'src/user.ts', TS_SOURCE, NO_COUNTS);
 
 		expect(units.map(unit => [unit.facts.name, unit.facts.exported, unit.facts.parameters])).toEqual([
@@ -59,8 +76,16 @@ describe('extractUnits', () => {
 			['Options', false, 0],
 			['isAdmin', true, 1],
 			['load', true, 2],
+			['SYSTEM_PROMPT', true, 0],
 			['get', false, 1],
 		]);
+	});
+
+	it('leaves one-line values to the syntax rules', () => {
+		const names = extractUnits(Lang.TS, 'src/user.ts', TS_SOURCE, NO_COUNTS).map(unit => unit.facts.name);
+
+		expect(names).not.toContain('MAX');
+		expect(names).not.toContain('userSchema');
 	});
 
 	it('names an arrow function by its declaration and reads its header from there', () => {
@@ -80,12 +105,13 @@ describe('extractUnits', () => {
 		expect(units.filter(unit => unit.facts.returnsBoolean).map(unit => unit.facts.name)).toEqual(['isAdmin']);
 	});
 
-	it('cuts a Go file into types, functions, and methods, counting parameters without the receiver', () => {
+	it('cuts a Go file into long value blocks, types, functions, and methods, counting parameters without the receiver', () => {
 		const units = extractUnits(Lang.GO, 'store/store.go', GO_SOURCE, NO_COUNTS);
 
 		expect(
 			units.map(unit => [unit.facts.name, unit.facts.exported, unit.facts.parameters, unit.facts.returnsBoolean])
 		).toEqual([
+			['resolvedWords', false, 0, false],
 			['Store', true, 0, false],
 			['Open', true, 1, false],
 			['Has', true, 2, true],
