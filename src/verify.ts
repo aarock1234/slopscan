@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { Output, generateText, stepCountIs, tool } from 'ai';
+import { NoOutputGeneratedError, Output, generateText, stepCountIs, tool } from 'ai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';
 
@@ -77,6 +77,13 @@ const verdictSchema = z.object({
 });
 
 type Verdict = z.infer<typeof verdictSchema>;
+
+// what a check becomes when the model spends every step on tools and never answers
+const OUT_OF_STEPS: Verdict = {
+	verdict: VerdictKind.UNCERTAIN,
+	reason: 'the verifier ran out of steps before answering',
+	quote: null,
+};
 
 const MAX_FILE_LINES = 200;
 const MAX_REFERENCES = 30;
@@ -201,18 +208,41 @@ export function createVerifier(options: VerifierOptions): Verifier {
 				}),
 			},
 			stopWhen: stepCountIs(options.config.maxSteps),
+			// the last step has no tools, so the model must answer instead of reading one more file
+			prepareStep: ({ stepNumber }) =>
+				stepNumber >= options.config.maxSteps - 1 ? { toolChoice: 'none' } : undefined,
 			output: Output.object({ schema: verdictSchema, name: 'verdict' }),
 			temperature: 0,
 			maxRetries: 2,
 		});
 
 		summary.inputTokens += result.usage.inputTokens ?? 0;
-		await writeFile(cachePath, JSON.stringify(result.output, null, 2));
+		const verdict = readVerdict(result);
 
-		return result.output;
+		if (verdict === undefined) {
+			// not cached, so a later run with more steps gets another try
+			return OUT_OF_STEPS;
+		}
+
+		await writeFile(cachePath, JSON.stringify(verdict, null, 2));
+
+		return verdict;
 	}
 
 	return { verify, summary: () => ({ ...summary }) };
+}
+
+// the sdk throws when a run ends without the structured answer; that is an outcome here, not a crash
+function readVerdict(result: { readonly output: Verdict }): Verdict | undefined {
+	try {
+		return result.output;
+	} catch (error) {
+		if (NoOutputGeneratedError.isInstance(error)) {
+			return undefined;
+		}
+
+		throw error;
+	}
 }
 
 function renderCandidate(finding: Finding, rule: JudgeRule, source: string): string {
