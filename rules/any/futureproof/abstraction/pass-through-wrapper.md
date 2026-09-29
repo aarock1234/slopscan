@@ -58,6 +58,28 @@ export async function profile(id: string): Promise<Profile> {
 }
 ```
 
+```ts
+// GOOD: small is not the same as pass-through; a lookup, a projection, a predicate, and an identity used as a
+// strategy each compute something, none forwards its arguments to another call
+export function detectLang(path: string): Lang | undefined {
+	return EXTENSION_LANGS[extname(path)];
+}
+
+function pickScore({ overall, grade, axes }: Scored): Baseline {
+	return { overall, grade, axes };
+}
+
+export function isIgnored(path: string, globs: readonly string[]): boolean {
+	return globs.some(glob => matchesGlob(path, glob));
+}
+
+const paint = color ? pc.green : identity;
+
+function identity(text: string): string {
+	return text;
+}
+```
+
 ```go
 func (s *Service) Profile(ctx context.Context, id string) (Profile, error) {
 	user, err := s.repo.FindByID(ctx, id)
