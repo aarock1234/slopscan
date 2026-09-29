@@ -53,10 +53,18 @@ func FormatDate(t time.Time) string {
 export function formatDate(date: Date): string {
 	return date.toISOString().slice(0, 10);
 }
+
+export function renderReceipt(order: Order): string {
+	return `${order.id} ${formatDate(order.placedAt)}`;
+}
 ```
 
 ```go
 func FormatDate(t time.Time) string {
 	return t.Format(time.DateOnly)
+}
+
+func RenderReceipt(o Order) string {
+	return o.ID + " " + FormatDate(o.PlacedAt)
 }
 ```
