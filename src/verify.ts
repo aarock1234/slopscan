@@ -69,13 +69,28 @@ const VerdictKind = {
 	UNCERTAIN: 'uncertain',
 } as const;
 
-const verdictSchema = z.object({
-	verdict: z.enum(VerdictKind),
-	// one sentence a reviewer can check
-	reason: z.string().max(300),
-	// the offending line copied verbatim from the code, or null when not confirming
-	quote: z.string().nullable(),
-});
+const MAX_REASON_LENGTH = 300;
+
+// one sentence a reviewer can check
+const reasonSchema = z.string().max(MAX_REASON_LENGTH);
+
+// only a confirmed verdict points at a line; the other two have nothing to quote
+const verdictSchema = z.discriminatedUnion('verdict', [
+	z.object({
+		verdict: z.literal(VerdictKind.CONFIRMED),
+		reason: reasonSchema,
+		// the offending line copied verbatim from the code
+		quote: z.string(),
+	}),
+	z.object({
+		verdict: z.literal(VerdictKind.REJECTED),
+		reason: reasonSchema,
+	}),
+	z.object({
+		verdict: z.literal(VerdictKind.UNCERTAIN),
+		reason: reasonSchema,
+	}),
+]);
 
 type Verdict = z.infer<typeof verdictSchema>;
 
@@ -83,7 +98,6 @@ type Verdict = z.infer<typeof verdictSchema>;
 const OUT_OF_STEPS: Verdict = {
 	verdict: VerdictKind.UNCERTAIN,
 	reason: 'the verifier ran out of steps before answering',
-	quote: null,
 };
 
 const MAX_FILE_LINES = 200;
@@ -168,7 +182,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 				summary.confirmed += 1;
 				kept.push({
 					...finding,
-					quote: verdict.quote ?? finding.quote,
+					quote: verdict.quote,
 					message: verdict.reason,
 				});
 			} else {
@@ -310,9 +324,12 @@ function renderCandidate(finding: Finding, rule: JudgeRule, source: string): str
 	].join('\n');
 }
 
+// a missing entry and an entry in an older shape are both misses; the check runs again and overwrites it
 async function readCached(path: string): Promise<Verdict | undefined> {
+	let raw: string;
+
 	try {
-		return verdictSchema.parse(JSON.parse(await readFile(path, 'utf-8')));
+		raw = await readFile(path, 'utf-8');
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
 			return undefined;
@@ -320,6 +337,10 @@ async function readCached(path: string): Promise<Verdict | undefined> {
 
 		throw error;
 	}
+
+	const parsed = verdictSchema.safeParse(JSON.parse(raw));
+
+	return parsed.success ? parsed.data : undefined;
 }
 
 async function readRange(

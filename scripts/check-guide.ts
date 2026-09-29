@@ -39,30 +39,25 @@ const Automation = {
 const sectionSchema = z.object({
 	id: z.string(),
 	kind: z.string(),
-	automation: z.enum([Automation.MECHANICAL, Automation.MIXED, Automation.CONTEXTUAL, Automation.NONE]),
+	automation: z.enum(Automation),
 	path: z.string(),
 });
 
 const indexSchema = z.object({ rules: z.array(sectionSchema) });
-
-type Section = z.infer<typeof sectionSchema>;
 
 const SKILL_DIRS = ['typescript-style', 'go-style'] as const;
 
 // sections that only point elsewhere or describe the toolchain are not rule material
 const NOT_RULE_MATERIAL = new Set(['navigation', 'workflow']);
 
+async function readIndex(path: string): Promise<z.infer<typeof indexSchema>> {
+	return indexSchema.parse(JSON.parse(await readFile(path, 'utf-8')));
+}
+
 async function main(): Promise<void> {
 	const rules = await loadRules(values.rules);
-	const sections = new Map<string, Section>();
-
-	for (const dir of SKILL_DIRS) {
-		const index = indexSchema.parse(JSON.parse(await readFile(join(values.skills, dir, 'rules.json'), 'utf-8')));
-
-		for (const section of index.rules) {
-			sections.set(section.id, section);
-		}
-	}
+	const indexes = await Promise.all(SKILL_DIRS.map(dir => readIndex(join(values.skills, dir, 'rules.json'))));
+	const sections = new Map(indexes.flatMap(index => index.rules).map(section => [section.id, section]));
 
 	const unknown = rules.flatMap(rule => rule.guide.filter(id => !sections.has(id)).map(id => `${rule.id} -> ${id}`));
 	const unanchored = rules.filter(rule => rule.guide.length === 0).map(rule => rule.id);

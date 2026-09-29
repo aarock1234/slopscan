@@ -157,28 +157,36 @@ export async function judge(
 	units: readonly Unit[],
 	rules: readonly JudgeRule[]
 ): Promise<Judged> {
-	const rulesState = Object.fromEntries(rules.map((rule, index) => [ruleKey(index), ruleState(rule)]));
-	const judged: Judged = {
-		judgments: [],
-		calls: 0,
-		inputTokens: 0,
+	const session: Session = {
+		client,
+		lang,
+		rules,
+		rulesState: Object.fromEntries(rules.map((rule, index) => [ruleKey(index), ruleState(rule)])),
+		judged: {
+			judgments: [],
+			calls: 0,
+			inputTokens: 0,
+		},
 	};
 
-	await mapConcurrent(pack(units, rules, rulesState), batch => ask(client, lang, batch, rules, rulesState, judged), {
+	await mapConcurrent(pack(units, rules, session.rulesState), batch => ask(session, batch), {
 		concurrency: CONCURRENT_CALLS,
 	});
 
-	return judged;
+	return session.judged;
 }
 
-async function ask(
-	client: TypeSafeClient,
-	lang: Lang,
-	batch: readonly Unit[],
-	rules: readonly JudgeRule[],
-	rulesState: Record<string, JsonValue>,
-	judged: Judged
-): Promise<void> {
+// everything one judge run shares across its calls: the client, the rulebook as state, and the answers so far
+type Session = {
+	readonly client: TypeSafeClient;
+	readonly lang: Lang;
+	readonly rules: readonly JudgeRule[];
+	readonly rulesState: Record<string, JsonValue>;
+	readonly judged: Judged;
+};
+
+async function ask(session: Session, batch: readonly Unit[]): Promise<void> {
+	const { client, lang, rules, rulesState, judged } = session;
 	const questions: Record<string, ChoiceQuestion> = Object.fromEntries(
 		batch.flatMap((_, u) =>
 			rules.map((_rule, r) => [
@@ -206,7 +214,7 @@ async function ask(
 			throw error;
 		}
 
-		await retrySmaller(client, lang, batch, rules, rulesState, judged);
+		await retrySmaller(session, batch);
 	}
 }
 
@@ -235,14 +243,7 @@ function collect(
 
 // the service refused the call for size: the estimate ran low, so halve the batch and ask both halves again.
 // a single unit that is still refused is too large for any call and is skipped.
-async function retrySmaller(
-	client: TypeSafeClient,
-	lang: Lang,
-	batch: readonly Unit[],
-	rules: readonly JudgeRule[],
-	rulesState: Record<string, JsonValue>,
-	judged: Judged
-): Promise<void> {
+async function retrySmaller(session: Session, batch: readonly Unit[]): Promise<void> {
 	const [only] = batch;
 
 	if (batch.length === 1 && only !== undefined) {
@@ -259,10 +260,7 @@ async function retrySmaller(
 	}
 
 	const half = Math.ceil(batch.length / 2);
-	await Promise.all([
-		ask(client, lang, batch.slice(0, half), rules, rulesState, judged),
-		ask(client, lang, batch.slice(half), rules, rulesState, judged),
-	]);
+	await Promise.all([ask(session, batch.slice(0, half)), ask(session, batch.slice(half))]);
 }
 
 // fills calls up to the token budget in file order: the rulebook once, then each unit with its questions

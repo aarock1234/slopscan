@@ -52,12 +52,12 @@ const fallbackThreshold = values.threshold === undefined ? undefined : Number(va
 const repo = resolve(values.repo);
 
 export type Finding = {
-	path: string;
-	line: number;
-	name: string;
-	ruleId: string;
-	probability: number;
-	confidence: number;
+	readonly path: string;
+	readonly line: number;
+	readonly name: string;
+	readonly ruleId: string;
+	readonly probability: number;
+	readonly confidence: number;
 };
 
 const CONCURRENT_FILES = 2;

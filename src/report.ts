@@ -45,7 +45,7 @@ export type RenderOptions = {
 export function renderReport(report: Report, options: RenderOptions): string {
 	switch (options.format) {
 		case Format.TERMINAL:
-			return renderTerminal(report, options.color);
+			return renderTerminal(report, options);
 		case Format.JSON:
 			return renderJson(report);
 		case Format.MARKDOWN:
@@ -61,10 +61,10 @@ const GRADE_COLOR: Readonly<Record<Grade, (text: string) => string>> = {
 	[Grade.F]: pc.red,
 };
 
-function renderTerminal(report: Report, hasColor: boolean): string {
-	const paint = hasColor ? GRADE_COLOR[report.grade] : identity;
-	const dim = hasColor ? pc.dim : identity;
-	const bold = hasColor ? pc.bold : identity;
+function renderTerminal(report: Report, { color }: RenderOptions): string {
+	const paint = color ? GRADE_COLOR[report.grade] : identity;
+	const dim = color ? pc.dim : identity;
+	const bold = color ? pc.bold : identity;
 
 	const lines = [
 		`${bold('slop score')} ${paint(`${report.overall} (${report.grade})`)}${deltaSuffix(report)}`,

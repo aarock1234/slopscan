@@ -28,7 +28,6 @@ export type ScanOptions = {
 	baseline?: string;
 };
 
-// the whole engine: read what changed, run every analyzer over it, confirm and verify what needs it, score the rest.
 export async function scan(options: ScanOptions): Promise<Report> {
 	const { scored, rejected } = await scoreRange(options, options.range);
 
