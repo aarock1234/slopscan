@@ -29,7 +29,7 @@ const fixtureSchema = z.object({
 	base: z.string(),
 	head: z.string(),
 	// the grade a careful reviewer would give this range; one letter or an inclusive range like "A-B"
-	expect: z.string().regex(/^[A-F](-[A-F])?$/),
+	expect: z.string().regex(/^[A-DF](-[A-DF])?$/),
 	note: z.string().optional(),
 });
 

@@ -1,15 +1,21 @@
 {
 	"truePositives": [
 		"src/analyzers/judge.ts:201 any.hacky.magic-number",
-		"src/config.ts:71 ts.idiom.type-predicates-for-narrowing",
-		"src/analyzers/judge.ts:237 ts.idiom.type-predicates-for-narrowing",
 		"scripts/calibrate.ts:84 ts.hacky.no-unchecked-type-assertion",
 		"scripts/calibrate.ts:84 ts.idiom.boolean-name-question-prefix",
 		"src/report.ts:60 ts.idiom.boolean-name-question-prefix",
 		"src/config.ts:59 ts.idiom.boolean-name-question-prefix",
+		"scripts/import-guide.ts:166 any.hacky.copy-paste-block",
+		"src/scan.ts:62 any.futureproof.single-caller-helper",
+		"src/analyzers/jev.ts:135 any.hacky.stringly-typed-enum"
+	],
+	"borderline": [
 		"src/report.ts:41 ts.futureproof.exhaustive-switch-never-check",
 		"src/model.ts:18 ts.futureproof.exhaustive-switch-never-check",
-		"scripts/import-guide.ts:166 any.hacky.copy-paste-block"
+		"src/config.ts:71 ts.idiom.type-predicates-for-narrowing",
+		"src/analyzers/judge.ts:237 ts.idiom.type-predicates-for-narrowing",
+		"src/report.ts:95 any.futureproof.single-caller-helper",
+		"src/report.ts:156 any.futureproof.single-caller-helper"
 	],
 	"falsePositives": [
 		"src/shared/env.ts:27 ts.futureproof.colocate-zod-schemas",
@@ -26,6 +32,9 @@
 		"src/confirm.ts:30 ts.idiom.boolean-name-question-prefix",
 		"src/analyzers/judge-validate.ts:100 ts.idiom.boolean-name-question-prefix",
 		"src/shared/env.ts:27 ts.idiom.boolean-name-question-prefix",
-		"src/analyzers/judge.ts:241 any.futureproof.pass-through-wrapper"
+		"src/analyzers/judge.ts:241 any.futureproof.pass-through-wrapper",
+		"src/finding.ts:19 any.futureproof.dead-export",
+		"src/analyzers/ast.ts:32 any.futureproof.dead-export",
+		"src/analyzers/judge-validate.ts:116 any.futureproof.single-caller-helper"
 	]
 }

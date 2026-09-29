@@ -10,8 +10,10 @@ import { z } from 'zod';
 
 import { PACKAGE_ROOT } from '../src/shared/paths.js';
 
+// borderline findings are defensible either way and count for nothing in either direction
 const labelsSchema = z.object({
 	truePositives: z.array(z.string()),
+	borderline: z.array(z.string()).default([]),
 	falsePositives: z.array(z.string()),
 });
 
@@ -34,6 +36,7 @@ async function main(paths: readonly string[]): Promise<void> {
 	);
 	const truePositives = new Set(labels.truePositives);
 	const falsePositives = new Set(labels.falsePositives);
+	const borderline = new Set(labels.borderline);
 
 	process.stdout.write(`${'variant'.padEnd(28)} findings  known-real kept  known-wrong produced  unlabeled\n`);
 
@@ -43,7 +46,9 @@ async function main(paths: readonly string[]): Promise<void> {
 
 		const kept = [...truePositives].filter(key => keys.has(key)).length;
 		const wrong = [...falsePositives].filter(key => keys.has(key)).length;
-		const unlabeled = [...keys].filter(key => !truePositives.has(key) && !falsePositives.has(key)).length;
+		const unlabeled = [...keys].filter(
+			key => !truePositives.has(key) && !falsePositives.has(key) && !borderline.has(key)
+		).length;
 
 		process.stdout.write(
 			`${basename(path, '.json').padEnd(28)} ${String(findings.length).padStart(8)}  ${`${kept}/${truePositives.size}`.padStart(15)}  ${`${wrong}/${falsePositives.size}`.padStart(20)}  ${String(unlabeled).padStart(9)}\n`

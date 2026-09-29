@@ -1,4 +1,4 @@
-import type { ChoiceCriteria, ChoiceQuestion, EntryType } from '@typesafe-ai/sdk';
+import type { ChoiceCriteria, ChoiceQuestion, EntryType, ScoreQuestion } from '@typesafe-ai/sdk';
 
 import type { Lang } from '../lang.js';
 import type { JudgeRule } from '../rule.js';
@@ -17,11 +17,25 @@ export type QuestionOptions = {
 	notApplicable: boolean;
 };
 
-// what the model sees about the code under judgment: the unit itself plus the names around it in the file,
-// so questions about colocation, wrappers, and reuse have something to check against
+// facts code can compute about a unit so the model never has to guess them. "code calculates, Jev judges."
+export type UnitFacts = {
+	name: string;
+	exported: boolean;
+	lines: number;
+	parameters: number;
+	returnsBoolean: boolean;
+	// call sites across the repository, not counting the definition
+	callers: number;
+	// every other mention of the name across the repository: calls, references passed as values, re-exports
+	references: number;
+};
+
+// what the model sees about the code under judgment: the unit, facts about it, and the names around it in
+// its file, so questions about colocation, wrappers, and reuse have something to check against
 export type CodeState = {
 	language: string;
 	code: string;
+	facts?: UnitFacts;
 	file?: {
 		path: string;
 		imports: string[];
@@ -58,6 +72,36 @@ export function contrastQuestion(options: QuestionOptions, ref = 'rule'): Choice
 		type: 'choice',
 		instructions: `With respect to \`${ref}\`, which set does \`code\` belong with?`,
 		criteria,
+	};
+}
+
+// the same judgment as an ordered rubric. the answer is a probability per level plus a confidence, so callers
+// can read "how bad" and "how sure" separately instead of one number.
+export const RubricLevel = {
+	NOT_APPLICABLE: 0,
+	FOLLOWS: 1,
+	BORDERLINE: 2,
+	VIOLATES: 3,
+	SEVERE: 4,
+} as const;
+
+export function rubricQuestion(ref = 'rule'): ScoreQuestion {
+	return {
+		type: 'score',
+		instructions: `How does \`code\` stand against \`${ref}\`? Use \`facts\` for anything countable.`,
+		criteria: [
+			{
+				summary: 'not applicable',
+				signals: 'the construct or situation the rule is about does not appear in code',
+			},
+			{
+				summary: 'follows the rule',
+				signals: `code is written the way ${ref}.examples.good is, or fits ${ref}.notAViolation`,
+			},
+			{ summary: 'borderline', signals: 'a careful reviewer might mention it, or might not' },
+			{ summary: 'violates the rule', signals: `code has the same problem as ${ref}.examples.bad` },
+			{ summary: 'severe violation', signals: 'the problem is present and will mislead a reader or cause a bug' },
+		],
 	};
 }
 
