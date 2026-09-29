@@ -27,4 +27,5 @@ jobs:
             - name: Score this pull request
               uses: ./
               with:
+                  typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
                   openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}

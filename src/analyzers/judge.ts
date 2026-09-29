@@ -20,6 +20,8 @@ import type { JudgeOutput } from './judge-validate.js';
 
 export const judgeConfigSchema = z
 	.object({
+		// the judge is the thorough, expensive tier: off unless this or --judge turns it on
+		enabled: z.boolean().default(false),
 		// "<provider>/<model id>"; see model.ts for providers
 		model: z.string().default('openai/gpt-6-sol'),
 		// total prompt tokens one run may spend before it starts skipping files

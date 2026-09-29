@@ -20,7 +20,8 @@ export type UnitFacts = {
 	references: number;
 };
 
-// a top-level function, method, or module-level arrow function: the granularity a decision model judges at
+// a function, method, module-level arrow function, or top-level type declaration: the granularity a decision
+// model judges at. types are units too, or rules about shapes would never see one.
 export type Unit = {
 	path: string;
 	line: number;
@@ -46,29 +47,35 @@ type Grammar = {
 	declarations: NapiConfig;
 	calls: NapiConfig;
 	identifiers: NapiConfig;
+	// the parameter list of a unit, never one of a nested callback or a function type
 	parameters: NapiConfig;
-	name: RegExp;
+	// the node carrying the name when the unit itself has no `name` field
+	declarator: string;
 	returnsBoolean: RegExp;
 	isExported(node: SgNode, name: string): boolean;
 };
 
 const TOP_LEVEL_TS = { any: [{ kind: 'program' }, { kind: 'export_statement' }] };
+const CALLABLE_TS = [{ kind: 'function_declaration' }, { kind: 'method_definition' }, { kind: 'arrow_function' }];
+const CALLABLE_GO = [{ kind: 'function_declaration' }, { kind: 'method_declaration' }];
 
 const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 	[Lang.TS]: {
-		// functions, methods, and arrow functions bound at module level; inline callbacks belong to their parent
+		// functions and methods anywhere; arrow functions, types, interfaces, and enums bound at module level.
+		// an arrow's unit is its whole declaration, so the header carries the name.
 		units: {
 			rule: {
 				any: [
 					{ kind: 'function_declaration' },
 					{ kind: 'method_definition' },
 					{
-						kind: 'arrow_function',
-						inside: {
-							kind: 'variable_declarator',
-							inside: { kind: 'lexical_declaration', inside: TOP_LEVEL_TS },
-						},
+						kind: 'lexical_declaration',
+						inside: TOP_LEVEL_TS,
+						has: { kind: 'variable_declarator', has: { kind: 'arrow_function', field: 'value' } },
 					},
+					{ kind: 'type_alias_declaration', inside: TOP_LEVEL_TS },
+					{ kind: 'interface_declaration', inside: TOP_LEVEL_TS },
+					{ kind: 'enum_declaration', inside: TOP_LEVEL_TS },
 				],
 			},
 		},
@@ -80,28 +87,30 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 					{ kind: 'class_declaration' },
 					{ kind: 'type_alias_declaration' },
 					{ kind: 'interface_declaration' },
+					{ kind: 'enum_declaration' },
 					{ kind: 'lexical_declaration' },
 				],
 				inside: TOP_LEVEL_TS,
 			},
 		},
 		calls: { rule: { kind: 'call_expression' } },
-		identifiers: { rule: { any: [{ kind: 'identifier' }, { kind: 'property_identifier' }] } },
-		parameters: { rule: { kind: 'formal_parameters' } },
-		name: /(?:function\s*\*?\s*|(?:const|let)\s+)?([A-Za-z_$][\w$]*)\s*[(=<:]/,
+		identifiers: {
+			rule: { any: [{ kind: 'identifier' }, { kind: 'property_identifier' }, { kind: 'type_identifier' }] },
+		},
+		parameters: { rule: { kind: 'formal_parameters', inside: { field: 'parameters', any: CALLABLE_TS } } },
+		declarator: 'variable_declarator',
 		returnsBoolean: /\)\s*:\s*boolean\b/,
-		isExported: node =>
-			node.parent()?.kind() === 'export_statement' ||
-			node.parent()?.parent()?.parent()?.kind() === 'export_statement',
+		isExported: node => node.parent()?.kind() === 'export_statement',
 	},
 	[Lang.GO]: {
-		units: { rule: { any: [{ kind: 'function_declaration' }, { kind: 'method_declaration' }] } },
+		units: {
+			rule: { any: [...CALLABLE_GO, { kind: 'type_declaration', inside: { kind: 'source_file' } }] },
+		},
 		imports: { rule: { kind: 'import_declaration' } },
 		declarations: {
 			rule: {
 				any: [
-					{ kind: 'function_declaration' },
-					{ kind: 'method_declaration' },
+					...CALLABLE_GO,
 					{ kind: 'type_declaration' },
 					{ kind: 'var_declaration' },
 					{ kind: 'const_declaration' },
@@ -113,15 +122,9 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 		identifiers: {
 			rule: { any: [{ kind: 'identifier' }, { kind: 'field_identifier' }, { kind: 'type_identifier' }] },
 		},
-		// the parameter list that does not follow another one: for methods the receiver list comes first
-		parameters: {
-			rule: {
-				kind: 'parameter_list',
-				not: { follows: { kind: 'parameter_list' } },
-				inside: { any: [{ kind: 'function_declaration' }, { kind: 'method_declaration' }] },
-			},
-		},
-		name: /func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)\s*[([]/,
+		// the `parameters` field, never the receiver list that precedes a method's name
+		parameters: { rule: { kind: 'parameter_list', inside: { field: 'parameters', any: CALLABLE_GO } } },
+		declarator: 'type_spec',
 		returnsBoolean: /\)\s*(?:bool|\(bool\b)/,
 		isExported: (_node, name) => /^[A-Z]/.test(name),
 	},
@@ -142,7 +145,7 @@ export function extractUnits(lang: Lang, path: string, source: string, counts: R
 		.filter(node => node.text().split('\n').length <= MAX_UNIT_LINES)
 		.map(node => {
 			const header = firstLine(node);
-			const name = grammar.name.exec(header)?.[1] ?? header;
+			const name = unitName(node, grammar);
 			const { start, end } = node.range();
 
 			return {
@@ -182,6 +185,13 @@ export async function countRepo(repo: string, lang: Lang, paths: readonly string
 		callers: name => callers.get(name) ?? 0,
 		references: name => references.get(name) ?? 0,
 	};
+}
+
+// the name the grammar gives the unit, or the declarator's inside it, or the header when nothing is named
+function unitName(node: SgNode, grammar: Grammar): string {
+	const named = node.field('name') ?? node.find({ rule: { kind: grammar.declarator } })?.field('name');
+
+	return named?.text() ?? firstLine(node);
 }
 
 // the callee's last name segment: `foo(...)`, `x.foo(...)`, and `pkg.Foo(...)` all count for their final name

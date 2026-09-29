@@ -11,7 +11,7 @@ import { createJudge } from './analyzers/judge.js';
 import type { Judge } from './analyzers/judge.js';
 import { loadConfig } from './config.js';
 import type { Config } from './config.js';
-import { resolveModel } from './model.js';
+import { hasKey, resolveModel } from './model.js';
 import { Format, formatValues, isFormat, renderReport } from './report.js';
 import { loadRules } from './rule.js';
 import { scan } from './scan.js';
@@ -26,7 +26,7 @@ const HELP = `slopscan - scores a git diff for slop
 
 usage:
   slopscan scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>]
-                [--no-judge] [--no-jev] [--no-verify] [--config <path>]
+                [--judge] [--no-jev] [--no-verify] [--config <path>]
   slopscan rules
 
 options:
@@ -34,9 +34,9 @@ options:
   --head <ref>       ref to score (default: HEAD)
   --baseline <ref>   also score baseline..base and show the delta
   --format <fmt>     ${formatValues.join(', ')} (default: ${Format.TERMINAL})
-  --no-judge         skip the LLM judge over whole files
-  --no-jev           skip the Jev decision model over changed functions (on when TYPESAFE_API_KEY is set)
-  --no-verify        keep Jev's less confident findings unverified instead of checking them with the LLM
+  --judge            run the LLM judge over whole files, the thorough and expensive tier (default: judge.enabled)
+  --no-jev           skip the Jev decision model over changed functions and types (on when TYPESAFE_API_KEY is set)
+  --no-verify        drop Jev's less confident findings instead of checking them with the judge model
   --config <path>    path to .slopscan.yml (default: ./.slopscan.yml)
   --rules <dir>      rule directory (default: the bundled rules)
   --json-out <path>  also write the full report as json to this file
@@ -66,7 +66,7 @@ const parseOptions = {
 		head: { type: 'string', default: 'HEAD' },
 		baseline: { type: 'string' },
 		format: { type: 'string', default: Format.TERMINAL },
-		judge: { type: 'boolean', default: true },
+		judge: { type: 'boolean' },
 		jev: { type: 'boolean', default: true },
 		verify: { type: 'boolean', default: true },
 		config: { type: 'string' },
@@ -108,10 +108,15 @@ async function runScan(values: Options): Promise<ExitCode> {
 
 	const repo = process.cwd();
 	const [config, rules] = await Promise.all([loadConfig(repo, values.config), loadRules(values.rules)]);
-	const judge = values.judge ? buildJudge(repo, config) : undefined;
+	// the flag wins over the config; without either the expensive tier stays off
+	const judge = (values.judge ?? config.judge.enabled) ? buildJudge(repo, config) : undefined;
 	const jev =
 		values.jev && config.jev.enabled && env.TYPESAFE_API_KEY !== undefined ? buildJev(repo, config) : undefined;
-	const verifier = jev && values.verify && config.verify.enabled ? buildVerifier(repo, config) : undefined;
+	// the verifier borrows the judge model, so it needs that key; without it, low-confidence jev findings are dropped
+	const verifier =
+		jev && values.verify && config.verify.enabled && hasKey(config.judge.model)
+			? buildVerifier(repo, config)
+			: undefined;
 
 	const report = await scan({
 		repo,

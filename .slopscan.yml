@@ -10,6 +10,7 @@ rules: {}
 failThreshold: 45
 
 judge:
+    enabled: false
     model: openrouter/openai/gpt-6-sol
     maxInputTokens: 500000
     minChangedLines: 3
@@ -21,7 +22,7 @@ judge:
 jev:
     enabled: true
     model: jev-latest
-    confidenceFloor: 0.45
+    confidenceFloor: 0.6
 
 verify:
     enabled: true

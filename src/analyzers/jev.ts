@@ -23,8 +23,9 @@ export const jevConfigSchema = z
 		// jev is on whenever TYPESAFE_API_KEY is set; this turns it off regardless
 		enabled: z.boolean().default(true),
 		model: z.string().default('jev-latest'),
-		// findings under this confidence go to the verifier; at or above it they stand on their own
-		confidenceFloor: z.number().min(0).max(1).default(0.45),
+		// findings under this confidence go to the verifier, or are dropped when there is none; at or above it
+		// they stand on their own. measured on two repositories: wrong findings sat at 0.47 to 0.50, right ones from 0.59.
+		confidenceFloor: z.number().min(0).max(1).default(0.6),
 	})
 	.strict();
 

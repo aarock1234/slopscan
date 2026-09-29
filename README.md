@@ -29,7 +29,7 @@ Five nouns, one pipeline.
 scores what survives. The syntax analyzer parses each file once with tree-sitter and runs every `ast` rule against
 the tree. The judge analyzer makes one model call per changed file with the `judge` rules as its rubric, and drops
 any finding whose quote is not in the file, is not on a changed line, or is under the confidence floor. The jev
-analyzer runs when `TYPESAFE_API_KEY` is set: one TypeSafe decision-model call per changed function, asking every
+analyzer runs when `TYPESAFE_API_KEY` is set: one TypeSafe decision-model call per changed function or type, asking every
 `judge` rule with a measured `jev.threshold` whether the function violates it, follows it, or is not about it. Jev
 findings below `jev.confidenceFloor` go to the verifier, the judge model as a bounded agent that may read files and
 find references before confirming or rejecting each one.
@@ -88,13 +88,18 @@ jobs:
                   fetch-depth: 0
             - uses: aarock1234/slopscan@v1
               with:
+                  typesafe-api-key: ${{ secrets.TYPESAFE_API_KEY }}
                   openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
 The Action writes the report to the job summary, uploads the full JSON as an artifact, keeps one sticky comment on
-the pull request up to date, and fails the check when the score is over `failThreshold`. Without a key it runs the
-syntax rules only. Inputs: `base`, `judge`, `openrouter-api-key`, `openai-api-key`, `comment`, `fail-on-threshold`,
-`version`. Outputs: `score`, `grade`.
+the pull request up to date, and fails the check when the score is over `failThreshold`.
+
+The keys pick the tier. No key runs the syntax rules only. `typesafe-api-key` adds Jev, one decision-model call per
+changed function or type, a few cents per pull request. `openrouter-api-key` or `openai-api-key` next to it lets
+the verifier check Jev's less confident findings with the judge model. `judge: true` adds the full LLM judge over
+whole files, the thorough tier, at roughly ten times the cost. Inputs: `base`, `judge`, `typesafe-api-key`,
+`openrouter-api-key`, `openai-api-key`, `comment`, `fail-on-threshold`, `version`. Outputs: `score`, `grade`.
 
 To run it on demand, comment `@slopscan` or `/slopscan` on a pull request. That needs an `issue_comment` trigger next to
 `pull_request` and a guard so only people with write access can start a run that uses the repository's secrets:
@@ -123,7 +128,7 @@ nothing.
 ## What leaves your machine
 
 The syntax rules run locally. The judge sends each changed file's changed regions, with fifteen lines of context
-and the file's imports, to the model provider named in `judge.model`. Jev sends each changed function with its
+and the file's imports, to the model provider named in `judge.model`. Jev sends each changed function or type with its
 file's import and declaration names to TypeSafe, and the verifier may send any tracked file's lines or grep hits
 to the judge model. Nothing else is sent. If that is not acceptable for a repository, run with `--no-judge`,
 `--no-jev`, or `--no-verify`, or leave the keys out.
@@ -132,9 +137,9 @@ to the judge model. Nothing else is sent. If that is not acceptable for a reposi
 
 ```bash
 pnpm install
-pnpm dev scan --base main                 # judge on; needs OPENAI_API_KEY in .env
-pnpm dev scan --base main --no-judge      # syntax rules only, no key needed
-pnpm dev scan --base main --no-jev        # skip jev even when TYPESAFE_API_KEY is set
+pnpm dev scan --base main                 # syntax rules, plus jev and the verifier when their keys are in .env
+pnpm dev scan --base main --judge         # also the full LLM judge; needs OPENROUTER_API_KEY or OPENAI_API_KEY
+pnpm dev scan --base main --no-jev        # syntax rules only
 pnpm dev scan --base main --format json   # or markdown
 pnpm dev rules                            # list rules
 pnpm dev scan --rules ./my-rules          # bring your own rule directory

@@ -14,8 +14,41 @@ type Provider = (typeof Provider)[keyof typeof Provider];
 
 const providerValues = Object.values(Provider) as readonly string[];
 
+const KEY_NAME: Readonly<Record<Provider, string>> = {
+	[Provider.OPENAI]: 'OPENAI_API_KEY',
+	[Provider.OPENROUTER]: 'OPENROUTER_API_KEY',
+};
+
+type Spec = {
+	provider: Provider;
+	modelId: string;
+};
+
+// whether the key a "provider/model-id" spec needs is set, for callers that should stay quiet without it
+export function hasKey(spec: string): boolean {
+	return keyOf(parseSpec(spec).provider) !== undefined;
+}
+
 // resolves "provider/model-id" from config to an AI SDK model, asking for the one key it needs
 export function resolveModel(spec: string): LanguageModel {
+	const { provider, modelId } = parseSpec(spec);
+	const apiKey = keyOf(provider);
+
+	if (apiKey === undefined) {
+		throw new ConfigError(
+			`${KEY_NAME[provider]} is required by ${spec}; set it, change judge.model, or run with --no-judge --no-verify`
+		);
+	}
+
+	switch (provider) {
+		case Provider.OPENAI:
+			return createOpenAI({ apiKey })(modelId);
+		case Provider.OPENROUTER:
+			return createOpenRouter({ apiKey })(modelId);
+	}
+}
+
+function parseSpec(spec: string): Spec {
 	const slash = spec.indexOf('/');
 	const provider = spec.slice(0, slash);
 	const modelId = spec.slice(slash + 1);
@@ -26,24 +59,18 @@ export function resolveModel(spec: string): LanguageModel {
 		);
 	}
 
+	return { provider, modelId };
+}
+
+function keyOf(provider: Provider): string | undefined {
 	switch (provider) {
 		case Provider.OPENAI:
-			return createOpenAI({ apiKey: requireKey('OPENAI_API_KEY', env.OPENAI_API_KEY) })(modelId);
+			return env.OPENAI_API_KEY;
 		case Provider.OPENROUTER:
-			return createOpenRouter({ apiKey: requireKey('OPENROUTER_API_KEY', env.OPENROUTER_API_KEY) })(modelId);
+			return env.OPENROUTER_API_KEY;
 	}
 }
 
 function isProvider(value: string): value is Provider {
 	return providerValues.includes(value);
-}
-
-function requireKey(name: string, value: string | undefined): string {
-	if (value === undefined) {
-		throw new ConfigError(
-			`${name} is required by the configured judge model; set it, change judge.model, or run with --no-judge --no-verify`
-		);
-	}
-
-	return value;
 }

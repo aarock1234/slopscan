@@ -7,12 +7,13 @@ import { readChanges } from './change.js';
 import type { Range } from './change.js';
 import type { Config } from './config.js';
 import { confirm } from './confirm.js';
+import { Origin } from './finding.js';
 import type { Finding } from './finding.js';
 import type { Report } from './report.js';
 import type { Rule } from './rule.js';
 import { score } from './score.js';
 import type { Scored } from './score.js';
-import type { Verifier } from './verify.js';
+import type { Verified, Verifier } from './verify.js';
 
 export type ScanOptions = {
 	repo: string;
@@ -66,12 +67,24 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 	const confirmed = await confirm(findings, enabled, { repo: options.repo, ignore: options.config.ignore });
 	const verified = options.verifier
 		? await options.verifier.verify(confirmed.kept, changes, enabled)
-		: { kept: confirmed.kept, rejected: [] };
+		: unverified(confirmed.kept, options.config.jev.confidenceFloor);
 
 	return {
 		scored: score(verified.kept, changes, enabled, options.config.scoring),
 		rejected: [...confirmed.rejected, ...verified.rejected],
 	};
+}
+
+// without a verifier no second opinion is coming, so a jev finding under the floor does not count
+function unverified(findings: readonly Finding[], floor: number): Verified {
+	const kept: Finding[] = [];
+	const rejected: Finding[] = [];
+
+	for (const finding of findings) {
+		(finding.origin === Origin.JEV && finding.confidence < floor ? rejected : kept).push(finding);
+	}
+
+	return { kept, rejected };
 }
 
 function pickScore({ overall, grade, axes }: Scored): Report['baseline'] {

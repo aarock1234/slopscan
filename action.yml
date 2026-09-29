@@ -11,13 +11,16 @@ inputs:
         description: Branch to diff against. Defaults to the pull request's base branch.
         default: ''
     judge:
-        description: Run the LLM judge. Needs openrouter-api-key or openai-api-key; otherwise syntax rules only.
-        default: 'true'
+        description: Run the full LLM judge over whole files, the thorough and expensive tier. Needs openrouter-api-key or openai-api-key.
+        default: 'false'
+    typesafe-api-key:
+        description: TypeSafe key for Jev, the cheap tier that judges every changed function and type. Without it, syntax rules only.
+        default: ''
     openrouter-api-key:
-        description: OpenRouter key for the judge.
+        description: OpenRouter key for the judge, and for the verifier that checks Jev's less confident findings.
         default: ''
     openai-api-key:
-        description: OpenAI key for the judge.
+        description: OpenAI key, used the same way as openrouter-api-key.
         default: ''
     comment:
         description: Post or update one sticky comment on the pull request.
@@ -98,8 +101,7 @@ runs:
           with:
               node-version: 24
 
-        - name: Restore judge cache
-          if: inputs.judge == 'true'
+        - name: Restore model cache
           uses: actions/cache@v4
           with:
               path: .slopscan-cache
@@ -112,14 +114,15 @@ runs:
           env:
               OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
               OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+              TYPESAFE_API_KEY: ${{ inputs.typesafe-api-key }}
               BASE: ${{ steps.pr.outputs.base }}
           run: |
               set -uo pipefail
               git fetch --no-tags origin "$BASE"
 
-              judge_flag=""
-              if [ "${{ inputs.judge }}" != "true" ] || { [ -z "$OPENROUTER_API_KEY" ] && [ -z "$OPENAI_API_KEY" ]; }; then
-                judge_flag="--no-judge"
+              judge_flag="--no-judge"
+              if [ "${{ inputs.judge }}" = "true" ] && { [ -n "$OPENROUTER_API_KEY" ] || [ -n "$OPENAI_API_KEY" ]; }; then
+                judge_flag="--judge"
               fi
 
               set +e
