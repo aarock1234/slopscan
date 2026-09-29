@@ -142,8 +142,9 @@ const GRAMMARS: Readonly<Record<Lang, Grammar>> = {
 // reviewer requests changes over run two or three hundred lines, so the cap sits well above them.
 const MAX_UNIT_LINES = 400;
 
-// a module-level value shorter than this is a number, a string, or a small object the syntax rules already see
-const MIN_VALUE_LINES = 3;
+// a one-line module-level value is a number, a string, or a small object the syntax rules already see; a value that
+// wraps onto a second line is a long regex, a prompt, or a table, which is what the design rules are about
+const MIN_VALUE_LINES = 2;
 
 // cuts one file into units, with every fact that the file alone can supply
 export function extractUnits(lang: Lang, path: string, source: string, counts: RepoCounts): Unit[] {
