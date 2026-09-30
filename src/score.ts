@@ -19,6 +19,9 @@ export const scoringSchema = z
 			})
 			.strict()
 			.prefault({}),
+		// removed in 0.4, when repeats started damping by square root; still accepted, and ignored, so a config written
+		// for an older version keeps scanning
+		damping: z.number().min(0).max(1).optional(),
 		// points per 100 changed lines at which an axis reaches 63; the curve is 100 * (1 - e^(-density / scale))
 		densityScale: z.number().positive().default(12),
 		axisWeights: z

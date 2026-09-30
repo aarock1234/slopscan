@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { jevConfigSchema } from './analyzers/jev.js';
 import { judgeConfigSchema } from './analyzers/judge.js';
 import { scoringSchema } from './score.js';
+import { logger } from './shared/log.js';
 import { ConfigError } from './shared/errors.js';
 import { verifyConfigSchema } from './verify.js';
 
@@ -55,6 +56,10 @@ export async function loadConfig(cwd: string, explicitPath?: string): Promise<Co
 		const issues = result.error.issues.map(issue => ` - ${issue.path.join('.')}: ${issue.message}`);
 
 		throw new ConfigError([`invalid config at ${path}:`, ...issues].join('\n'));
+	}
+
+	if (result.data.scoring.damping !== undefined) {
+		logger.warn({ path }, 'scoring.damping is ignored since 0.4; repeated findings damp by square root');
 	}
 
 	return result.data;
