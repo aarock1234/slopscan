@@ -31,15 +31,15 @@ ranges:
       head: HEAD
       expect: A-B
 
-    # the two anchors from real review: 915 read clean to both of us; 941 got a request-changes review
+    # the two anchors from real review: 915 is a passable C in its author's eyes; 941 got a request-changes review
     # (docs/pr-941-backend-review.md in that repository) for duplicated shapes, meaning recovered from prose,
     # compute and persist behind one catch, prompts as code, and parallel arrays
     - name: cubby-law PR 915 question evidence
       repo: ../../Cubby/cubby-law
       base: 9899b048cf
       head: 6730a34c3e
-      expect: A
-      note: 27 files; a few unvalidated casts and magic numbers, nothing structural
+      expect: B-C
+      note: 27 files; unvalidated casts, magic numbers, and a prompt authored as a string array; the author rates it a C, not an A
 
     - name: cubby-law PR 941 rubric grading
       repo: ../../Cubby/cubby-law
