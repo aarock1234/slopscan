@@ -24,8 +24,10 @@ falsePositives:
   - >-
     numbers in a plain arithmetic formula whose surrounding function name
     explains them, such as a percentage or area calculation
-jev:
-  threshold: 0.39
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.39
+    openrouter/cloudflare/clef: 0.62
 ---
 
 ## Why

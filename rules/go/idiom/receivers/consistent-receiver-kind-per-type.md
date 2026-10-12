@@ -6,8 +6,10 @@ falsePositives:
   - >-
     a method that must have a value receiver to satisfy an interface on the
     value type, with a comment saying so
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.74
 guide:
   - go.receivers
 ---

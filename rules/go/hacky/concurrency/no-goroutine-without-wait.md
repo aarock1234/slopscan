@@ -14,8 +14,10 @@ guide:
   - go.concurrency
   - go.errgroup
   - go.worker-pool
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.51
 ---
 
 ## Why

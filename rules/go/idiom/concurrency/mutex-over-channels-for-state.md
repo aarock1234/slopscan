@@ -7,8 +7,10 @@ falsePositives:
     queue or cancellation
   - a semaphore channel that bounds concurrency rather than guarding a value
   - an actor loop that owns the state by design and is documented as such
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.46
 guide:
   - go.concurrency
 ---

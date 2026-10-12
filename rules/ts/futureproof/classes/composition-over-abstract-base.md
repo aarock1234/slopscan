@@ -11,8 +11,10 @@ falsePositives:
   - >-
     a hierarchy that is one level deep and whose subclasses differ only in the
     abstract method they implement
-jev:
-  threshold: 0.56
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.56
+    openrouter/cloudflare/clef: 0.53
 guide:
   - ts.abstract-classes
 ---

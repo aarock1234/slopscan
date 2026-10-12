@@ -11,8 +11,9 @@ falsePositives:
   - >-
     a comment on a line of its own inside a function body that explains the
     following statement
-jev:
-  threshold: 0.58
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.58
 guide:
   - ts.comments
 ---

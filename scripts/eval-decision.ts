@@ -1,14 +1,14 @@
-// evaluates Jev on the judge-rule fixtures. each shape is one call per fixture; the fixture under test is
-// never among its own reference examples. cents per run.
+// evaluates a decision model on the judge-rule fixtures. each shape is one call per fixture; the fixture under test
+// is never among its own reference examples. cents per run.
 //
-//   pnpm script scripts/eval-jev.ts [--rule <id>] [--shape <name>]
+//   pnpm script scripts/eval-decision.ts [--model <spec>] [--rule <id>] [--shape <name>]
 
 import { parseArgs } from 'node:util';
 
-import { TypeSafeClient } from '@typesafe-ai/sdk';
 import type { ChoiceQuestion, EntryType } from '@typesafe-ai/sdk';
 
-import { Verdict, languageName, ruleQuestion } from '../src/analyzers/jev.js';
+import { DEFAULT_DECISION_MODEL, Verdict, languageName, ruleQuestion } from '../src/analyzers/decision.js';
+import { resolveDecisionClient } from '../src/model.js';
 import { Detect, loadRules } from '../src/rule.js';
 import type { Example, JudgeRule } from '../src/rule.js';
 import { mapConcurrent } from '../src/shared/concurrency.js';
@@ -17,6 +17,10 @@ import { RULES_DIR } from '../src/shared/paths.js';
 
 const { values } = parseArgs({
 	options: {
+		model: {
+			type: 'string',
+			default: DEFAULT_DECISION_MODEL,
+		},
 		rule: { type: 'string' },
 		shape: { type: 'string' },
 	},
@@ -122,7 +126,7 @@ const SHAPES: readonly Shape[] = [
 const shapes = SHAPES.filter(shape => values.shape === undefined || shape.name === values.shape);
 
 async function main(): Promise<void> {
-	const client = new TypeSafeClient();
+	const client = resolveDecisionClient(values.model);
 	const rules = (await loadRules(RULES_DIR)).filter(
 		(rule): rule is JudgeRule =>
 			rule.detect === Detect.JUDGE && (values.rule === undefined || rule.id === values.rule)
@@ -244,6 +248,6 @@ function formatSigned(value: number): string {
 }
 
 main().catch((error: unknown) => {
-	logger.error({ err: error }, 'eval-jev failed');
+	logger.error({ err: error }, 'eval-decision failed');
 	process.exitCode = 1;
 });

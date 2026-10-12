@@ -15,8 +15,9 @@ falsePositives:
     a Pick, Omit, Partial, or schema .pick()/.extend() that derives from the one
     definition
   - a type inferred from a schema with z.infer
-jev:
-  threshold: 0.72
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.72
 guide:
   - ts.boundary-and-domain-contracts
   - ts.one-definition

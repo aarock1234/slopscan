@@ -1,7 +1,7 @@
 // scores real ranges in local repositories and compares the grade with what a human expected, so the
 // scoring constants and the rules can be tuned against judgment rather than intuition. repos stay where they
-// are; nothing is copied into this project. the same tiers run as in the cli: jev and the verifier whenever
-// their keys are set, the judge with --judge.
+// are; nothing is copied into this project. the same tiers run as in the cli: the decision model and the verifier
+// whenever their keys are set, the judge with --judge.
 //
 //   pnpm script scripts/calibrate.ts [--fixtures fixtures/calibration.yml] [--judge] [--only <name substring>]
 
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
 			rules,
 			...buildTiers(repo, config, {
 				shouldJudge: values.judge,
-				shouldRunJev: true,
+				shouldDecide: true,
 				shouldVerify: true,
 			}),
 		});

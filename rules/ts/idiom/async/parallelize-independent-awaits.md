@@ -9,8 +9,10 @@ falsePositives:
     operations against a resource that must not see concurrent calls, such as a
     single database transaction or a rate-limited API
   - a sequence deliberately kept serial with a comment explaining why
-jev:
-  threshold: 0.52
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.52
+    openrouter/cloudflare/clef: 0.52
 guide:
   - ts.parallel-operations
 ---

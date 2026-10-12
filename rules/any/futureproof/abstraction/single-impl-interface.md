@@ -15,8 +15,6 @@ falsePositives:
   - >-
     an interface with several implementations, or one whose second
     implementation arrives in the same change
-jev:
-  threshold: 0.64
 guide:
   - go.consumer-interfaces
   - go.function-boundaries

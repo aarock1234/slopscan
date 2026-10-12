@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-// which layer produced a finding: syntax matching, the LLM judge, or the Jev decision model
+// which layer produced a finding: syntax matching, the LLM judge, or a decision model
 export const Origin = {
 	AST: 'ast',
 	JUDGE: 'judge',
-	JEV: 'jev',
+	DECISION: 'decision',
 } as const;
 
 export type Origin = (typeof Origin)[keyof typeof Origin];
@@ -12,7 +12,8 @@ export type Origin = (typeof Origin)[keyof typeof Origin];
 const originValues = Object.values(Origin) as [Origin, ...Origin[]];
 
 // one violation of one rule at one place. `quote` is verbatim source so a reader can find it and so judge
-// findings can be checked against the file. `symbol` is a judge nomination for a confirm predicate.
+// findings can be checked against the file. `symbol` is what a confirm predicate checks: nominated by the judge, or
+// bound to $SYMBOL by an ast rule.
 export const findingSchema = z.object({
 	ruleId: z.string(),
 	path: z.string(),

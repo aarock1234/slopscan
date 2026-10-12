@@ -7,8 +7,10 @@ falsePositives:
     a return that directly follows the opening brace of an if, else, or case
     body
   - a one-line function body
-jev:
-  threshold: 0.87
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.87
+    openrouter/cloudflare/clef: 0.49
 guide:
   - go.spacing
 ---

@@ -18,8 +18,10 @@ falsePositives:
 guide:
   - go.close-errors
   - go.persistence-contracts
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.53
 ---
 
 ## Why

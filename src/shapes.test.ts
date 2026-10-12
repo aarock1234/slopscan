@@ -20,6 +20,7 @@ const rule: Rule = {
 	path: 'rule.md',
 	detect: Detect.JUDGE,
 	falsePositives: [],
+	decisionThresholds: {},
 };
 
 const PLANNED = `export type PlannedElement = {

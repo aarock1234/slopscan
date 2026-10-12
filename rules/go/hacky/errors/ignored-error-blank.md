@@ -1,6 +1,15 @@
 ---
 severity: major
 detect: ast
+# the matcher cannot see whether the blank holds an error, so what it finds is checked before it counts
+verify: true
+falsePositives:
+  - 'a blank that holds something other than an error, such as the found flag from `strings.Cut`'
+  - 'a discard with a comment on or above the call saying why the error cannot matter'
+  - 'best-effort cleanup on a path that already returns its error'
+  - >-
+    a discarded `http.ResponseWriter.Write` error, which arrives after the
+    status is sent and leaves the handler nothing to do
 ignore:
   - '**/*_test.go'
 ast:
@@ -19,7 +28,25 @@ ast:
             not:
               has:
                 field: function
-                regex: (\.Close|\.Load|\.LoadOrStore)$|^fmt\.Fprint|^os\.LookupEnv$
+                # calls whose last result is a bool, not an error
+                regex: (\.Close|\.Load|\.LoadOrStore)$|^fmt\.Fprint|^os\.LookupEnv$|^(strings|bytes)\.Cut(Prefix|Suffix)?$
+    not:
+      any:
+        # a comment directly above, between statements or opening the block, says why the error cannot matter
+        - follows:
+            kind: comment
+        - nthChild: 1
+          inside:
+            kind: statement_list
+            follows:
+              kind: comment
+        # best-effort cleanup on a path that already returns its error
+        - inside:
+            kind: if_statement
+            stopBy: end
+            has:
+              field: condition
+              regex: '\b\w*[eE]rr\w* != nil\b'
 guide:
   - go.close-errors
   - go.error-propagation
@@ -71,6 +98,38 @@ func parseLimit(raw string) (int, error) {
 	}
 
 	return limit, nil
+}
+```
+
+```go
+func init() {
+	// an unset or invalid LOG_LEVEL keeps the info level; config loading reports it later
+	_ = level.UnmarshalText([]byte(os.Getenv("LOG_LEVEL")))
+}
+```
+
+```go
+func replace(path string, data []byte) (err error) {
+	tmp := path + ".tmp"
+	defer func() {
+		if err != nil {
+			_ = os.Remove(tmp)
+		}
+	}()
+
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+		return fmt.Errorf("writing %s: %w", tmp, err)
+	}
+
+	return os.Rename(tmp, path)
+}
+```
+
+```go
+func splitPair(line string) (string, string) {
+	name, value, _ := strings.Cut(line, "=")
+
+	return name, value
 }
 ```
 

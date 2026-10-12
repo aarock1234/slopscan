@@ -18,8 +18,10 @@ falsePositives:
 guide:
   - ts.error-classes
   - ts.error-propagation
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.58
 ---
 
 ## Why

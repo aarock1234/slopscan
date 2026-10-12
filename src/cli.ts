@@ -15,7 +15,7 @@ const HELP = `slopscan - scores a git diff for slop
 
 usage:
   slopscan scan [--base <ref>] [--head <ref>] [--baseline <ref>] [--format <fmt>]
-                [--judge] [--no-jev] [--no-verify] [--config <path>]
+                [--judge] [--no-decision] [--no-verify] [--config <path>]
   slopscan rules
 
 options:
@@ -24,8 +24,8 @@ options:
   --baseline <ref>   also score baseline..base and show the delta
   --format <fmt>     ${formatValues.join(', ')} (default: ${Format.TERMINAL})
   --judge            run the LLM judge over whole files, the thorough and expensive tier (default: judge.enabled)
-  --no-jev           skip the Jev decision model over changed functions and types (on when TYPESAFE_API_KEY is set)
-  --no-verify        drop Jev's less confident findings instead of checking them with the verifier model
+  --no-decision      skip the decision model over changed functions and types (on when decision.model's key is set)
+  --no-verify        skip the verifier: keep confident decision findings and unchecked syntax matches as they are
   --config <path>    path to .slopscan.yml (default: ./.slopscan.yml)
   --rules <dir>      rule directory (default: the bundled rules)
   --json-out <path>  also write the full report as json to this file
@@ -63,7 +63,7 @@ const parseOptions = {
 			default: Format.TERMINAL,
 		},
 		judge: { type: 'boolean' },
-		jev: {
+		decision: {
 			type: 'boolean',
 			default: true,
 		},
@@ -132,7 +132,7 @@ async function runScan(values: Options): Promise<ExitCode> {
 		// the judge flag wins over the config; without either the expensive tier stays off
 		...buildTiers(repo, config, {
 			shouldJudge: values.judge ?? config.judge.enabled,
-			shouldRunJev: values.jev,
+			shouldDecide: values.decision,
 			shouldVerify: values.verify,
 		}),
 		...(values.baseline !== undefined && { baseline: values.baseline }),

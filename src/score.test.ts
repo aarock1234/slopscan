@@ -18,6 +18,7 @@ function rule(id: string, axis: Rule['axis'], severity: Rule['severity']): Rule 
 		severity,
 		ignore: [],
 		guide: [],
+		falsePositives: [],
 		why: 'because',
 		message: id,
 		good: [],
@@ -25,6 +26,7 @@ function rule(id: string, axis: Rule['axis'], severity: Rule['severity']): Rule 
 		path: `${id}.md`,
 		detect: Detect.AST,
 		ast: {},
+		verify: false,
 	};
 }
 

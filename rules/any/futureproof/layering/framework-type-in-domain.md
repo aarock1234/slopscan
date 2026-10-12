@@ -25,8 +25,10 @@ falsePositives:
     taking *http.Response or fetch's Response to decode a payload; the rule is
     about a server's request and response types reaching a service
   - 'a package whose purpose is one protocol, such as an RDAP or WHOIS client'
-jev:
-  threshold: 0.46
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.46
+    openrouter/cloudflare/clef: 0.48
 guide:
   - go.function-boundaries
   - go.layers

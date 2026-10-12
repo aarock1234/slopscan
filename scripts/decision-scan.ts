@@ -1,23 +1,25 @@
-// scans a whole repository with Jev at unit granularity, through the same units, state, questions, and batching
-// the product uses on changed units, and writes every judgment over threshold as json so variants can be
-// compared against hand-labeled results with jev-compare.
+// scans a whole repository with a decision model at unit granularity, through the same units, state, questions, and
+// batching the product uses on changed units, and writes every judgment over threshold as json so variants can be
+// compared against hand-labeled results with decision-compare.
 //
-//   pnpm script scripts/jev-scan.ts --out <file> [--repo <path>] [--lang ts|go] [--rule <id>] [--threshold <p>]
-//                                   [--include-tests]
+//   pnpm script scripts/decision-scan.ts --out <file> [--model <spec>] [--repo <path>] [--lang ts|go]
+//                                        [--max-rules-per-call <n>] [--max-units-per-call <n>]
+//                                        [--rule <id>] [--threshold <p>] [--include-tests]
 //
-// threshold: the fallback for rules with no measured jev.threshold; without it those rules are not asked
+// model: a decision.model spec such as openrouter/cloudflare/clef (default: slopscan's default decision model)
+// max-rules-per-call, max-units-per-call: decision.maxRulesPerCall and decision.maxUnitsPerCall
+// threshold: the fallback for rules with no threshold measured for the model; without it those rules are not asked
 
 import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs, promisify } from 'node:util';
 
-import { TypeSafeClient } from '@typesafe-ai/sdk';
-
-import { judge } from '../src/analyzers/jev.js';
+import { DEFAULT_DECISION_MODEL, decide, isAskable } from '../src/analyzers/decision.js';
 import { isIgnored } from '../src/change.js';
 import { Lang, detectLang, langValues, ruleAppliesTo } from '../src/lang.js';
-import { Detect, loadRules } from '../src/rule.js';
+import { resolveDecisionClient } from '../src/model.js';
+import { loadRules } from '../src/rule.js';
 import type { JudgeRule } from '../src/rule.js';
 import { mapConcurrent } from '../src/shared/concurrency.js';
 import { logger } from '../src/shared/log.js';
@@ -30,6 +32,12 @@ const execFileAsync = promisify(execFile);
 const { values } = parseArgs({
 	options: {
 		out: { type: 'string' },
+		model: {
+			type: 'string',
+			default: DEFAULT_DECISION_MODEL,
+		},
+		'max-rules-per-call': { type: 'string' },
+		'max-units-per-call': { type: 'string' },
 		repo: {
 			type: 'string',
 			default: PACKAGE_ROOT,
@@ -48,7 +56,11 @@ const { values } = parseArgs({
 	strict: true,
 });
 
-const fallbackThreshold = values.threshold === undefined ? undefined : Number(values.threshold);
+const fallbackThreshold = optionalNumber(values.threshold);
+const batching = {
+	maxRulesPerCall: optionalNumber(values['max-rules-per-call']),
+	maxUnitsPerCall: optionalNumber(values['max-units-per-call']),
+};
 const repo = resolve(values.repo);
 
 export type Finding = {
@@ -77,19 +89,22 @@ async function main(): Promise<void> {
 	}
 
 	const lang = values.lang;
-	const client = new TypeSafeClient();
-	const rules = (await loadRules(RULES_DIR)).filter(
-		(rule): rule is JudgeRule =>
-			rule.detect === Detect.JUDGE &&
-			ruleAppliesTo(rule.lang, lang) &&
-			(values.rule === undefined || rule.id === values.rule) &&
-			(rule.jevThreshold !== undefined || fallbackThreshold !== undefined)
-	);
+	const model = values.model;
+	const client = resolveDecisionClient(model);
+	const rules = (await loadRules(RULES_DIR))
+		.filter(isAskable)
+		.filter(
+			rule =>
+				ruleAppliesTo(rule.lang, lang) &&
+				(values.rule === undefined || rule.id === values.rule) &&
+				thresholdFor(rule, model) !== undefined
+		);
 	const units = await collectUnits(lang);
 
 	logger.info(
 		{
 			repo,
+			model,
 			lang,
 			units: units.length,
 			rules: rules.length,
@@ -109,21 +124,21 @@ async function main(): Promise<void> {
 		async ([path, fileUnits]) => {
 			const applicable = rules.filter(rule => !isIgnored(path, rule.ignore));
 
-			return applicable.length === 0 ? undefined : judge(client, lang, fileUnits, applicable);
+			return applicable.length === 0 ? undefined : decide(client, lang, fileUnits, applicable, batching);
 		},
 		{ concurrency: CONCURRENT_FILES }
 	);
 
-	for (const judged of perFile) {
-		if (judged === undefined) {
+	for (const decided of perFile) {
+		if (decided === undefined) {
 			continue;
 		}
 
-		calls += judged.calls;
-		inputTokens += judged.inputTokens;
+		calls += decided.calls;
+		inputTokens += decided.inputTokens;
 
-		for (const { unit, rule, probability, confidence } of judged.judgments) {
-			if (probability >= (rule.jevThreshold ?? fallbackThreshold ?? Number.POSITIVE_INFINITY)) {
+		for (const { unit, rule, probability, confidence } of decided.judgments) {
+			if (probability >= (thresholdFor(rule, model) ?? Number.POSITIVE_INFINITY)) {
 				findings.push({
 					path: unit.path,
 					line: unit.line,
@@ -147,6 +162,14 @@ async function main(): Promise<void> {
 		},
 		'done'
 	);
+}
+
+function optionalNumber(value: string | undefined): number | undefined {
+	return value === undefined ? undefined : Number(value);
+}
+
+function thresholdFor(rule: JudgeRule, model: string): number | undefined {
+	return rule.decisionThresholds[model] ?? fallbackThreshold;
 }
 
 function isLang(value: string): value is Lang {
@@ -184,6 +207,6 @@ function printSummary(findings: readonly Finding[]): void {
 }
 
 main().catch((error: unknown) => {
-	logger.error({ err: error }, 'jev-scan failed');
+	logger.error({ err: error }, 'decision-scan failed');
 	process.exitCode = 1;
 });

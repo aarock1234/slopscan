@@ -38,6 +38,7 @@ const rule: JudgeRule = {
 	path: 'rule.md',
 	detect: Detect.JUDGE,
 	falsePositives: [],
+	decisionThresholds: {},
 };
 
 const rules = new Map([[rule.id, rule]]);

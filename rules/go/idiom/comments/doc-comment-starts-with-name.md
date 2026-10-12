@@ -5,8 +5,9 @@ falsePositives:
   - 'a package comment, which starts with "Package name"'
   - 'a deprecation notice starting with "Deprecated:"'
   - a comment on a declaration inside a grouped var or const block
-jev:
-  threshold: 0.56
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.56
 guide:
   - go.doc-comments
 ---

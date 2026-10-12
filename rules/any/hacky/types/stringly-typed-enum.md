@@ -13,8 +13,10 @@ falsePositives:
   - >-
     map keys, header names, and env variable names, which are identifiers rather
     than a closed set of states
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.5
 guide:
   - go.constants
   - ts.constants

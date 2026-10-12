@@ -5,8 +5,10 @@ falsePositives:
   - 'the inline form `if err := f(); err != nil`'
   - an error deliberately collected and checked after a loop or a Wait
   - a second call that does not depend on the first result
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.52
 guide:
   - go.error-propagation
 ---

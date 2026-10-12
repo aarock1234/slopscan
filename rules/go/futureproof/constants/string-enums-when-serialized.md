@@ -9,8 +9,10 @@ falsePositives:
   - >-
     a hot path where the integer is a deliberate optimization and a String
     method covers logs
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.48
 guide:
   - go.constants
 ---

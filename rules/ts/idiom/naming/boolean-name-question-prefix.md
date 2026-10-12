@@ -12,8 +12,9 @@ falsePositives:
   - >-
     any identifier whose type is not boolean, including functions that return
     objects, arrays, promises of non-booleans, or nothing
-jev:
-  threshold: 0.48
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.48
 guide:
   - ts.naming
 ---

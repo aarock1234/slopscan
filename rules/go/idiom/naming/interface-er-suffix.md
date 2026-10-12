@@ -7,8 +7,10 @@ falsePositives:
     Storage)
   - a method name that does not form a natural er noun
   - a name that matches an existing standard library interface
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.49
 guide:
   - go.naming
 ---

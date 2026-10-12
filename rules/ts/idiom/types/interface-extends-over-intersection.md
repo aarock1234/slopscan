@@ -16,8 +16,9 @@ falsePositives:
     again
 guide:
   - ts.interface-or-type
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
 ---
 
 ## Why

@@ -9,8 +9,10 @@ falsePositives:
     a type whose constructor validates invariants that a zero value cannot
     satisfy
   - a type that is unexported and only constructed in one place
-jev:
-  threshold: 0.51
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.51
+    openrouter/cloudflare/clef: 0.57
 guide:
   - go.zero-values
 ---

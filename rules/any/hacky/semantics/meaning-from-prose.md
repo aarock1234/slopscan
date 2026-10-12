@@ -16,8 +16,10 @@ falsePositives:
   - >-
     a display-only branch that picks copy or an icon from a category the record
     already carries
-jev:
-  threshold: 0.29
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.29
+    openrouter/cloudflare/clef: 0.47
 guide:
   - ts.meaning-as-data
 ---

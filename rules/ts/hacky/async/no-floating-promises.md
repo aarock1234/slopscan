@@ -14,8 +14,9 @@ falsePositives:
     visible in the diff or obvious from the name
 guide:
   - ts.async-await
-jev:
-  threshold: 0.3
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.3
 ---
 
 ## Why

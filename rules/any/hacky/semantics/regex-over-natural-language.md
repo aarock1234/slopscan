@@ -16,8 +16,10 @@ falsePositives:
   - >-
     a deliberately small, documented lexicon for a fixed protocol, such as
     commit message prefixes
-jev:
-  threshold: 0.51
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.51
+    openrouter/cloudflare/clef: 0.37
 guide:
   - ts.facts-and-prose
 ---

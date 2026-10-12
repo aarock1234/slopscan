@@ -9,8 +9,10 @@ falsePositives:
   - >-
     a callback that needs to return an error per element (iter.Seq2 with an
     error value)
-jev:
-  threshold: 0.49
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.49
+    openrouter/cloudflare/clef: 0.48
 guide:
   - go.iterators
 ---

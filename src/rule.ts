@@ -36,16 +36,20 @@ export const Detect = {
 
 export type Detect = (typeof Detect)[keyof typeof Detect];
 
-// deterministic checks that a judge finding must pass before it counts; implemented in confirm.ts
+// deterministic checks that a finding must pass before it counts; implemented in confirm.ts
 export const Confirm = {
 	CALL_COUNT: 'callCount',
 	IMPL_COUNT: 'implCount',
 	REF_COUNT: 'refCount',
+	WRITE_COUNT: 'writeCount',
 } as const;
 
 export type Confirm = (typeof Confirm)[keyof typeof Confirm];
 
 const confirmValues = Object.values(Confirm) as [Confirm, ...Confirm[]];
+
+// the metavariable an ast rule with a confirm predicate binds to the symbol the predicate checks, as `$SYMBOL`
+export const SYMBOL_METAVARIABLE = 'SYMBOL';
 
 // an ast-grep rule body exactly as its YAML reference defines it. ast-grep validates the shape when matching,
 // so this schema only guards the envelope.
@@ -74,6 +78,9 @@ const commonFrontmatter = {
 	ignore: z.array(z.string()).default([]),
 	// the style guide sections this rule enforces; the guide's prose is the authority the rule answers to
 	guide: z.array(z.string().regex(GUIDE_ID)).default([]),
+	confirm: z.enum(confirmValues).optional(),
+	// what looks like a violation but is not, for the models that read the rule
+	falsePositives: z.array(z.string()).default([]),
 };
 
 const frontmatterSchema = z.discriminatedUnion('detect', [
@@ -81,17 +88,19 @@ const frontmatterSchema = z.discriminatedUnion('detect', [
 		.object({
 			detect: z.literal(Detect.AST),
 			ast: z.union([astMatcherSchema, astByLangSchema]),
+			// the matcher over-approximates, as when the violation depends on a type it cannot see; the verifier
+			// checks each match when it runs
+			verify: z.boolean().default(false),
 			...commonFrontmatter,
 		})
 		.strict(),
 	z
 		.object({
 			detect: z.literal(Detect.JUDGE),
-			confirm: z.enum(confirmValues).optional(),
-			falsePositives: z.array(z.string()).default([]),
-			// measured on the rule's own fixtures by scripts/jev-thresholds.ts; absent means Jev is not asked
-			jev: z
-				.object({ threshold: z.number().min(0).max(1) })
+			// decision model spec -> the violation probability at which its verdict counts, measured on the rule's own
+			// fixtures by scripts/decision-thresholds.ts; a model with no entry is not asked about this rule
+			decision: z
+				.object({ thresholds: z.record(z.string(), z.number().min(0).max(1)) })
 				.strict()
 				.optional(),
 			...commonFrontmatter,
@@ -115,6 +124,8 @@ type RuleBase = {
 	severity: Severity;
 	ignore: readonly string[];
 	guide: readonly string[];
+	confirm?: Confirm;
+	falsePositives: readonly string[];
 	why: string;
 	message: string;
 	good: readonly Example[];
@@ -125,14 +136,13 @@ type RuleBase = {
 export type AstRule = RuleBase & {
 	detect: typeof Detect.AST;
 	ast: Partial<Record<Lang, AstMatcher>>;
+	verify: boolean;
 };
 
 export type JudgeRule = RuleBase & {
 	detect: typeof Detect.JUDGE;
-	confirm?: Confirm;
-	falsePositives: readonly string[];
-	// violation probability at which a Jev verdict counts, measured on this rule's fixtures
-	jevThreshold?: number;
+	// decision model spec -> violation probability at which its verdict counts, measured on this rule's fixtures
+	decisionThresholds: Readonly<Record<string, number>>;
 };
 
 export type Rule = AstRule | JudgeRule;
@@ -183,6 +193,8 @@ export function parseRule(rulesDir: string, path: string, content: string): Rule
 		severity: frontmatter.data.severity,
 		ignore: frontmatter.data.ignore,
 		guide: frontmatter.data.guide,
+		...(frontmatter.data.confirm && { confirm: frontmatter.data.confirm }),
+		falsePositives: frontmatter.data.falsePositives,
 		why,
 		message,
 		good,
@@ -191,20 +203,38 @@ export function parseRule(rulesDir: string, path: string, content: string): Rule
 	};
 
 	if (frontmatter.data.detect === Detect.AST) {
-		return {
+		const rule: AstRule = {
 			...base,
 			detect: Detect.AST,
 			ast: normalizeAst(path, identity.lang, frontmatter.data.ast),
+			verify: frontmatter.data.verify,
 		};
+		checkAstRule(rule);
+
+		return rule;
 	}
 
 	return {
 		...base,
 		detect: Detect.JUDGE,
-		...(frontmatter.data.confirm && { confirm: frontmatter.data.confirm }),
-		...(frontmatter.data.jev && { jevThreshold: frontmatter.data.jev.threshold }),
-		falsePositives: frontmatter.data.falsePositives,
+		decisionThresholds: frontmatter.data.decision?.thresholds ?? {},
 	};
+}
+
+// catches ast frontmatter that would be silently ignored at scan time
+function checkAstRule(rule: AstRule): void {
+	if (rule.falsePositives.length > 0 && !rule.verify) {
+		throw new RuleError(rule.path, 'falsePositives on an ast rule only reach the verifier; set verify: true');
+	}
+
+	const symbol = `$${SYMBOL_METAVARIABLE}`;
+
+	if (
+		rule.confirm !== undefined &&
+		Object.values(rule.ast).some(matcher => !JSON.stringify(matcher).includes(symbol))
+	) {
+		throw new RuleError(rule.path, `confirm needs every matcher to bind ${symbol} to the symbol it checks`);
+	}
 }
 
 type Identity = Pick<RuleBase, 'id' | 'lang' | 'axis' | 'category'>;

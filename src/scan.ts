@@ -1,6 +1,7 @@
 import { collectFindings } from './analyzer.js';
 import type { Analyzer } from './analyzer.js';
 import { astAnalyzer } from './analyzers/ast.js';
+import type { Decider } from './analyzers/decision.js';
 import type { Judge } from './analyzers/judge.js';
 import { readChanges } from './change.js';
 import type { Range } from './change.js';
@@ -13,8 +14,7 @@ import type { Rule } from './rule.js';
 import { score } from './score.js';
 import { findDuplicateShapes } from './shapes.js';
 import type { Scored } from './score.js';
-import type { JevTier } from './tiers.js';
-import type { Verified } from './verify.js';
+import type { Verified, Verifier } from './verify.js';
 
 export type ScanOptions = {
 	repo: string;
@@ -23,8 +23,10 @@ export type ScanOptions = {
 	rules: readonly Rule[];
 	// absent when running with --no-judge
 	judge?: Judge;
-	// absent when running with --no-jev or without a TypeSafe key
-	jev?: JevTier;
+	// absent when running with --no-decision or without the decision model's key
+	decider?: Decider;
+	// absent when running with --no-verify or without the verifier model's key
+	verifier?: Verifier;
 	// an older ref to score as baseline..base, so the report can show the delta
 	baseline?: string;
 };
@@ -48,8 +50,8 @@ export async function scan(options: ScanOptions): Promise<Report> {
 		...scored,
 		...(baseline && { baseline }),
 		...(options.judge && { judge: options.judge.summary() }),
-		...(options.jev && { jev: options.jev.analyzer.summary() }),
-		...(options.jev?.verifier && { verifier: options.jev.verifier.summary() }),
+		...(options.decider && { decision: options.decider.summary() }),
+		...(options.verifier && { verifier: options.verifier.summary() }),
 		...(rejected.length > 0 && { rejected }),
 	};
 }
@@ -64,7 +66,7 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 	const analyzers: Analyzer[] = [
 		astAnalyzer,
 		...(options.judge ? [options.judge.analyze] : []),
-		...(options.jev ? [options.jev.analyzer.analyze] : []),
+		...(options.decider ? [options.decider.analyze] : []),
 	];
 
 	const changes = await readChanges(options.repo, range, options.config.ignore);
@@ -78,10 +80,9 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 		repo: options.repo,
 		ignore: options.config.ignore,
 	});
-	const verifier = options.jev?.verifier;
-	const verified = verifier
-		? await verifier.verify(confirmed.kept, changes, enabled)
-		: unverified(confirmed.kept, options.config.jev.confidenceFloor);
+	const verified = options.verifier
+		? await options.verifier.verify(confirmed.kept, changes, enabled)
+		: unverified(confirmed.kept, options.config.decision.confidenceFloor);
 
 	return {
 		scored: score(verified.kept, changes, enabled, options.config.scoring),
@@ -89,13 +90,14 @@ async function scoreRange(options: ScanOptions, range: Range): Promise<RangeResu
 	};
 }
 
-// without a verifier no second opinion is coming, so a jev finding under the floor does not count
+// without a verifier no second opinion is coming, so a decision finding under the floor does not count. an ast match
+// that asks for a check stands unchecked, as syntax findings did before there was a verifier.
 function unverified(findings: readonly Finding[], floor: number): Verified {
 	const kept: Finding[] = [];
 	const rejected: Finding[] = [];
 
 	for (const finding of findings) {
-		(finding.origin === Origin.JEV && finding.confidence < floor ? rejected : kept).push(finding);
+		(finding.origin === Origin.DECISION && finding.confidence < floor ? rejected : kept).push(finding);
 	}
 
 	return {

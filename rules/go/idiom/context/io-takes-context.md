@@ -11,8 +11,10 @@ falsePositives:
     a method satisfying an interface that has no context, such as http.Handler
     where r.Context() is used inside
   - test helpers
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.52
 guide:
   - go.context
 ---

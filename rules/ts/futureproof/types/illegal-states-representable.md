@@ -10,8 +10,10 @@ falsePositives:
   - >-
     a pending or in-progress state that legitimately has no value yet, when the
     type says so with its own variant
-jev:
-  threshold: 0.47
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.47
+    openrouter/cloudflare/clef: 0.55
 guide:
   - ts.legal-states
 ---

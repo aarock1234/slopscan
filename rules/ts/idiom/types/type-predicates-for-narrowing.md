@@ -7,8 +7,10 @@ falsePositives:
     question, such as `isActive(user)` or `hasPermission(user, action)`
   - 'a check that is used once, inline, and never followed by a cast'
   - functions that already declare `value is T` or `asserts value is T`
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.57
 guide:
   - ts.type-guards
 ---

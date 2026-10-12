@@ -11,8 +11,10 @@ falsePositives:
   - >-
     a `switch` or a chain of `if` returning a value per case, which is already
     flat
-jev:
-  threshold: 0.48
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.48
+    openrouter/cloudflare/clef: 0.5
 guide:
   - ts.guard-clauses
 ---

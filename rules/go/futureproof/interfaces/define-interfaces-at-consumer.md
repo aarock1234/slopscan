@@ -7,8 +7,10 @@ falsePositives:
     package is the consumer
   - a widely shared interface in the style of io.Reader
   - a package that both defines and consumes the interface
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.48
 guide:
   - go.consumer-interfaces
   - go.layers

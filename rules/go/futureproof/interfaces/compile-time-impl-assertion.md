@@ -7,8 +7,10 @@ falsePositives:
     which already checks it
   - an unexported helper type with a single local use
   - the interface is not known to the implementing package
-jev:
-  threshold: 0.48
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.48
+    openrouter/cloudflare/clef: 0.34
 guide:
   - go.interface-assertions
 ---

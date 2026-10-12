@@ -11,8 +11,10 @@ falsePositives:
     type
 guide:
   - go.constants
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.54
 ---
 
 ## Why

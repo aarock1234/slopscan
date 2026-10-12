@@ -9,8 +9,9 @@ falsePositives:
     domain abbreviations that are standard in the codebase, such as `db`, `req`,
     `res`, `ctx`, `id`, or `url`
   - names that match an external API or schema field the code has to mirror
-jev:
-  threshold: 0.42
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.42
 guide:
   - ts.readability-and-abstraction-decisions
 ---

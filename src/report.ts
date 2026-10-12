@@ -1,7 +1,7 @@
 import pc from 'picocolors';
 import { z } from 'zod';
 
-import { jevSummarySchema } from './analyzers/jev.js';
+import { decisionSummarySchema } from './analyzers/decision.js';
 import { judgeSummarySchema } from './analyzers/judge.js';
 import { findingSchema } from './finding.js';
 import { axisValues } from './rule.js';
@@ -12,7 +12,7 @@ import { verifySummarySchema } from './verify.js';
 export const reportSchema = scoredSchema.extend({
 	baseline: scoreSchema.optional(),
 	judge: judgeSummarySchema.optional(),
-	jev: jevSummarySchema.optional(),
+	decision: decisionSummarySchema.optional(),
 	verifier: verifySummarySchema.optional(),
 	// judge findings that failed their confirm predicate; kept for tuning, hidden from humans
 	rejected: z.array(findingSchema).optional(),
@@ -84,8 +84,12 @@ function renderTerminal(report: Report, { color }: RenderOptions): string {
 		lines.push(dim(judgeLine(report.judge)));
 	}
 
-	if (report.jev !== undefined) {
-		lines.push(dim(jevLine(report.jev, report.verifier)));
+	if (report.decision !== undefined) {
+		lines.push(dim(decisionLine(report.decision)));
+	}
+
+	if (report.verifier !== undefined) {
+		lines.push(dim(verifierLine(report.verifier)));
 	}
 
 	lines.push('');
@@ -152,13 +156,12 @@ function renderMarkdown(report: Report): string {
 	return lines.join('\n');
 }
 
-function jevLine(jev: NonNullable<Report['jev']>, verifier: Report['verifier']): string {
-	const verified =
-		verifier === undefined
-			? ''
-			: `; verifier ${verifier.model} confirmed ${verifier.confirmed} of ${verifier.checked}`;
+function decisionLine(decision: NonNullable<Report['decision']>): string {
+	return `decision ${decision.model}: ${decision.rules} rules over ${decision.units} functions, ${decision.calls} calls, ${decision.inputTokens} in`;
+}
 
-	return `jev ${jev.model}: ${jev.units} functions, ${jev.calls} calls, ${jev.inputTokens} in${verified}`;
+function verifierLine(verifier: NonNullable<Report['verifier']>): string {
+	return `verifier ${verifier.model}: confirmed ${verifier.confirmed} of ${verifier.checked}, ${verifier.cachedCalls} cached, ${verifier.inputTokens} in`;
 }
 
 function judgeLine(judge: NonNullable<Report['judge']>): string {

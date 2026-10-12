@@ -9,8 +9,10 @@ falsePositives:
     a `let` declared without an initializer and assigned exactly once further
     down, when merging it into a `const` would need a nested ternary or an IIFE
   - loop counters in a classic `for` statement
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.56
 guide:
   - ts.variables
 ---

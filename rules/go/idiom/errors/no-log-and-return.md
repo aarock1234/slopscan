@@ -16,8 +16,10 @@ falsePositives:
     summary such as ctx.Err() or a failure count, as a documented policy
 guide:
   - go.error-propagation
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.53
 ---
 
 ## Why

@@ -13,8 +13,6 @@ falsePositives:
     a wrapper that adds something, such as a default argument, a conversion,
     error context, logging, or caching
   - 'functions with several callers, where the shared name is the point'
-jev:
-  threshold: 0.51
 guide:
   - go.function-boundaries
   - go.layers

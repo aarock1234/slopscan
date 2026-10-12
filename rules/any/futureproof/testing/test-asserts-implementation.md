@@ -15,8 +15,10 @@ falsePositives:
   - >-
     asserting call counts for behavior the contract promises, such as a cache
     hitting the loader exactly once
-jev:
-  threshold: 0.54
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.54
+    openrouter/cloudflare/clef: 0.54
 ---
 
 ## Why

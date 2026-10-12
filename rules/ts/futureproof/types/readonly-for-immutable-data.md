@@ -7,8 +7,10 @@ falsePositives:
   - >-
     types generated from a schema or an ORM where the modifier is not under the
     author's control
-jev:
-  threshold: 0.52
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.52
+    openrouter/cloudflare/clef: 0.6
 guide:
   - ts.readonly
 ---

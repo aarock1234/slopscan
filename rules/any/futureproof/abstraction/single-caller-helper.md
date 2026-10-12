@@ -9,8 +9,6 @@ falsePositives:
     obvious, even with one caller
   - 'a type guard or predicate, whose name is the point'
   - 'exported functions, which may have callers outside this repository'
-jev:
-  threshold: 0.46
 guide:
   - go.function-boundaries
   - ts.readability-and-abstraction-decisions

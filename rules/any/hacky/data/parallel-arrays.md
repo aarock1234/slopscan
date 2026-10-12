@@ -14,8 +14,10 @@ falsePositives:
     two arrays zipped once at the boundary where they arrive, such as a header
     row and a data row
   - hot loops where a struct-of-arrays layout is the point and the code says so
-jev:
-  threshold: 0.28
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.28
+    openrouter/cloudflare/clef: 0.57
 guide:
   - ts.related-data
 ---

@@ -12,8 +12,10 @@ falsePositives:
   - >-
     a schema moved into its own file because it is large, when it stays in the
     same feature directory
-jev:
-  threshold: 0.75
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.75
+    openrouter/cloudflare/clef: 0.56
 guide:
   - ts.project-structure
 ---

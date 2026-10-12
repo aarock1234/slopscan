@@ -61,6 +61,7 @@ function judgeRule(id: string, predicate?: Confirm): Rule {
 		detect: Detect.JUDGE,
 		...(predicate && { confirm: predicate }),
 		falsePositives: [],
+		decisionThresholds: {},
 	};
 }
 

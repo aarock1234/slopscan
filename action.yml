@@ -14,10 +14,10 @@ inputs:
         description: Run the full LLM judge over whole files, the thorough and expensive tier. Needs openrouter-api-key or openai-api-key.
         default: 'false'
     typesafe-api-key:
-        description: TypeSafe key for Jev, the cheap tier that judges every changed function and type. Without it, syntax rules only.
+        description: TypeSafe key for the decision model, the cheap tier that judges every changed function and type, when decision.model is a typesafe/ model (the default).
         default: ''
     openrouter-api-key:
-        description: OpenRouter key for the judge, and for the verifier that checks Jev's less confident findings.
+        description: OpenRouter key for the judge, for the decision model when decision.model is an openrouter/ model, and for the verifier that checks decision findings and the syntax matches that need it.
         default: ''
     openai-api-key:
         description: OpenAI key, used the same way as openrouter-api-key.

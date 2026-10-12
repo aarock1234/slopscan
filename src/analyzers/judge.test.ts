@@ -46,6 +46,7 @@ const judgeRule: Rule = {
 	path: 'rule.md',
 	detect: Detect.JUDGE,
 	falsePositives: ['doc comments'],
+	decisionThresholds: {},
 };
 
 const astRule: Rule = {
@@ -53,6 +54,7 @@ const astRule: Rule = {
 	id: 'ts.hacky.no-explicit-any',
 	detect: Detect.AST,
 	ast: { ts: { rule: { kind: 'predefined_type' } } },
+	verify: false,
 };
 
 function mockModel(output: JudgeOutput) {

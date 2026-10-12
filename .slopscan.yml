@@ -19,10 +19,13 @@ judge:
     maxOutputTokens: 2000
     timeoutMs: 90000
 
-jev:
+decision:
     enabled: true
-    model: jev-latest
+    model: typesafe/jev-latest
     confidenceFloor: 0.6
+    # unset, a call asks one function about every rule; openrouter/cloudflare/clef judges best one rule at a time:
+    # maxRulesPerCall: 1
+    # maxUnitsPerCall: 8
 
 verify:
     enabled: true

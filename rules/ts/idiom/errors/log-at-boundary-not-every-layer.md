@@ -11,8 +11,10 @@ falsePositives:
   - >-
     a catch that adds context by wrapping the error in a typed error before
     rethrowing, without logging
-jev:
-  threshold: 0.51
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.51
+    openrouter/cloudflare/clef: 0.48
 guide:
   - ts.error-propagation
 ---

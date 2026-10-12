@@ -10,8 +10,9 @@ falsePositives:
   - >-
     a constructor for a secondary type when New is already taken by the primary
     one
-jev:
-  threshold: 0.49
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.49
 guide:
   - go.constructors
 ---

@@ -9,8 +9,9 @@ falsePositives:
   - 'methods on named map, slice, or channel types'
 guide:
   - go.receivers
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
 ---
 
 ## Why

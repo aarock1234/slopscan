@@ -9,8 +9,10 @@ falsePositives:
     map[string]json.RawMessage used for a two-phase decode on a discriminator
     field
   - pass-through data that is never read by field name
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.47
 guide:
   - go.json-boundaries
 ---

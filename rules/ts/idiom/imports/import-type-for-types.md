@@ -9,8 +9,10 @@ falsePositives:
   - >-
     files where every import in the statement is already marked with an inline
     `type` modifier
-jev:
-  threshold: 0.45
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.45
+    openrouter/cloudflare/clef: 0.52
 guide:
   - ts.import-order
 ---

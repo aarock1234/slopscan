@@ -1,6 +1,12 @@
 ---
 severity: minor
 detect: ast
+# the matcher cannot see whether this Close returns an error, so what it finds is checked before it counts
+verify: true
+falsePositives:
+  - >-
+    a Close method that returns nothing, such as `pgxpool.Pool.Close` or a type
+    in this repository declared `func (s *Service) Close()`
 ast:
   rule:
     kind: defer_statement

@@ -16,8 +16,10 @@ falsePositives:
   - >-
     a top-level boundary that maps any failure to one response, such as an http
     handler or a job runner
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.5
 guide:
   - go.context
   - go.persistence-contracts

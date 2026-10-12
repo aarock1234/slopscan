@@ -9,7 +9,7 @@ import { parseSource } from './analyzers/ast.js';
 import { isIgnored } from './change.js';
 import type { Finding } from './finding.js';
 import { Lang, detectLang } from './lang.js';
-import { Confirm, Detect } from './rule.js';
+import { Confirm } from './rule.js';
 import type { AstMatcher, Rule } from './rule.js';
 import { mapConcurrent } from './shared/concurrency.js';
 
@@ -25,16 +25,14 @@ export type ConfirmOptions = {
 	ignore: readonly string[];
 };
 
-// judge findings for rules with a `confirm` predicate must pass a deterministic repo-wide check, or they are
-// dropped. a finding without a nominated symbol cannot be checked and is dropped too.
+// findings for rules with a `confirm` predicate must pass a deterministic repo-wide check, or they are dropped.
+// a finding without a nominated symbol cannot be checked and is dropped too.
 export async function confirm(
 	findings: readonly Finding[],
 	rules: readonly Rule[],
 	options: ConfirmOptions
 ): Promise<ConfirmResult> {
-	const predicateByRule = new Map(
-		rules.flatMap(rule => (rule.detect === Detect.JUDGE && rule.confirm ? [[rule.id, rule.confirm] as const] : []))
-	);
+	const predicateByRule = new Map(rules.flatMap(rule => (rule.confirm ? [[rule.id, rule.confirm] as const] : [])));
 
 	const kept: Finding[] = [];
 	const rejected: Finding[] = [];
@@ -63,11 +61,12 @@ export async function confirm(
 
 type Predicate = (repo: RepoIndex, lang: Lang, symbol: string) => Promise<boolean>;
 
-// each predicate says whether the symbol is used little enough for the finding to stand
+// each predicate says whether the finding stands, given how the repository uses its symbol
 const PREDICATES: Readonly<Record<Confirm, Predicate>> = {
 	[Confirm.CALL_COUNT]: async (repo, lang, symbol) => (await repo.count(lang, callMatcher(symbol))) <= 1,
 	[Confirm.IMPL_COUNT]: async (repo, lang, symbol) => (await repo.count(lang, implMatcher(lang, symbol))) <= 1,
 	[Confirm.REF_COUNT]: async (repo, lang, symbol) => (await repo.count(lang, refMatcher(lang, symbol))) <= 1,
+	[Confirm.WRITE_COUNT]: async (repo, lang, symbol) => (await repo.count(lang, writeMatcher(lang, symbol))) >= 1,
 };
 
 // call sites: `symbol(...)` or `anything.symbol(...)` in either language
@@ -102,6 +101,81 @@ function refMatcher(lang: Lang, symbol: string) {
 	return {
 		rule: {
 			any: kinds.map(kind => ({ kind, regex: `^${escape(symbol)}$` })),
+		},
+	};
+}
+
+// statements that change the collection a variable holds: assigning it or one of its elements, or handing it to a
+// builtin or library call that mutates its argument. a local of the same name declared with := is not a write.
+function writeMatcher(lang: Lang, symbol: string) {
+	const name = `^${escape(symbol)}$`;
+
+	return lang === Lang.TS ? tsWriteMatcher(name) : goWriteMatcher(name);
+}
+
+function goWriteMatcher(name: string) {
+	const variable = { kind: 'identifier', regex: name };
+	const target = {
+		any: [variable, { kind: 'index_expression', has: { field: 'operand', ...variable } }],
+	};
+
+	return {
+		rule: {
+			any: [
+				{ kind: 'assignment_statement', has: { field: 'left', has: target } },
+				{ any: [{ kind: 'inc_statement' }, { kind: 'dec_statement' }], has: target },
+				{
+					kind: 'call_expression',
+					all: [
+						{
+							has: {
+								field: 'function',
+								regex: '^(delete|clear|copy|sort\\.\\w+|slices\\.(Sort\\w*|Reverse|Insert|Delete\\w*))$',
+							},
+						},
+						{ has: { field: 'arguments', has: { nthChild: 1, ...variable } } },
+					],
+				},
+			],
+		},
+	};
+}
+
+function tsWriteMatcher(name: string) {
+	const variable = { kind: 'identifier', regex: name };
+	const target = {
+		any: [
+			variable,
+			{ kind: 'subscript_expression', has: { field: 'object', ...variable } },
+			{ kind: 'member_expression', has: { field: 'object', ...variable } },
+		],
+	};
+
+	return {
+		rule: {
+			any: [
+				{
+					any: [{ kind: 'assignment_expression' }, { kind: 'augmented_assignment_expression' }],
+					has: { field: 'left', ...target },
+				},
+				{ kind: 'update_expression', has: target },
+				{
+					kind: 'call_expression',
+					has: {
+						field: 'function',
+						kind: 'member_expression',
+						all: [
+							{ has: { field: 'object', ...variable } },
+							{
+								has: {
+									field: 'property',
+									regex: '^(push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin|set|delete|clear|add)$',
+								},
+							},
+						],
+					},
+				},
+			],
 		},
 	};
 }

@@ -11,8 +11,10 @@ falsePositives:
     the small function that assembles dynamic input from data, as opposed to the
     standing instructions
   - a prompt version identifier or a schema field description kept in code
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.51
 guide:
   - ts.prompt-files
 ---

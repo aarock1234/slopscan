@@ -11,8 +11,10 @@ falsePositives:
   - >-
     a switch that intentionally handles a subset and falls through to shared
     behavior for everything else
-jev:
-  threshold: 0.49
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.49
+    openrouter/cloudflare/clef: 0.49
 guide:
   - ts.exhaustive-switch
 ---

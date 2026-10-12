@@ -7,6 +7,9 @@ falsePositives:
   - an import block the diff did not touch
 guide:
   - go.import-order
+decision:
+  thresholds:
+    openrouter/cloudflare/clef: 0.81
 ---
 
 ## Why

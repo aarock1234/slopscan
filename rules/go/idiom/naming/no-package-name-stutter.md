@@ -10,8 +10,10 @@ falsePositives:
     type, such as client.Client or time.Time
 guide:
   - go.package-names
-jev:
-  threshold: 0.47
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.47
+    openrouter/cloudflare/clef: 0.45
 ---
 
 ## Why

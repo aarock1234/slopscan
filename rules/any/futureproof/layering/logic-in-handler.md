@@ -16,8 +16,10 @@ guide:
   - go.layers
   - ts.durable-work
   - ts.layers
-jev:
-  threshold: 0.49
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.49
+    openrouter/cloudflare/clef: 0.5
 ---
 
 ## Why

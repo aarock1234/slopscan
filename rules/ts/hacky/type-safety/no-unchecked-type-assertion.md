@@ -12,8 +12,10 @@ falsePositives:
   - >-
     a cast to `unknown` on its own, which discards type information rather than
     inventing it
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.44
 guide:
   - ts.boundary-and-domain-contracts
   - ts.branded-types

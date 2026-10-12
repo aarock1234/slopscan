@@ -7,8 +7,10 @@ falsePositives:
     an interface used only for behavior, with no assertion back to a concrete
     type
   - the caller never needs the concrete type again
-jev:
-  threshold: 0.46
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.46
+    openrouter/cloudflare/clef: 0.4
 guide:
   - go.typed-values
 ---

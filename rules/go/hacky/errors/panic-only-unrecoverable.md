@@ -18,6 +18,19 @@ ast:
         - inside:
             kind: default_case
             stopBy: end
+        # re-raising a recovered panic, as net/http asks middleware to do with http.ErrAbortHandler
+        - inside:
+            stopBy: end
+            any:
+              - kind: func_literal
+              - kind: function_declaration
+              - kind: method_declaration
+            has:
+              stopBy: end
+              kind: call_expression
+              has:
+                field: function
+                regex: ^recover$
 ignore:
   - '**/*_test.go'
 guide:
@@ -26,7 +39,7 @@ guide:
 
 ## Why
 
-A panic in library code turns an operational failure such as a missing row or a bad input into a process crash that the caller cannot handle. Panics belong to genuinely unrecoverable situations: violated internal invariants, `Must` helpers that document the contract in their name, and impossible states after exhaustive handling. Configuration, network, and storage failures return an error from a constructor or `run`, including failures that used to hide inside `init`; an `init` panic is only right when process-wide setup is deliberately unavoidable, so `init` is not exempt here. A fixed program literal such as `regexp.MustCompile` at package level makes the invariant visible; input-dependent patterns use `regexp.Compile` and return its error.
+A panic in library code turns an operational failure such as a missing row or a bad input into a process crash that the caller cannot handle. Panics belong to genuinely unrecoverable situations: violated internal invariants, `Must` helpers that document the contract in their name, impossible states after exhaustive handling, and re-raising a panic that `recover` caught but must not swallow, such as `http.ErrAbortHandler`. Configuration, network, and storage failures return an error from a constructor or `run`, including failures that used to hide inside `init`; an `init` panic is only right when process-wide setup is deliberately unavoidable, so `init` is not exempt here. A fixed program literal such as `regexp.MustCompile` at package level makes the invariant visible; input-dependent patterns use `regexp.Compile` and return its error.
 
 ## Message
 
@@ -70,6 +83,28 @@ func (s *Store) Get(id string) (*Item, error) {
 
 ```go
 var itemIDPattern = regexp.MustCompile(`^[a-z0-9]{16}$`)
+```
+
+```go
+func Recover(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			v := recover()
+			if v == nil {
+				return
+			}
+
+			// net/http relies on this panic to abort the response
+			if err, ok := v.(error); ok && errors.Is(err, http.ErrAbortHandler) {
+				panic(v)
+			}
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
 ```
 
 ```go

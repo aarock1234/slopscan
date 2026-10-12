@@ -7,7 +7,7 @@ import { parseSource } from './analyzers/ast.js';
 import { Lang } from './lang.js';
 import { mapConcurrent } from './shared/concurrency.js';
 
-// facts code can compute about a unit so a model never has to guess them. "code calculates, Jev judges."
+// facts code can compute about a unit so a model never has to guess them. "code calculates, the model judges."
 export type UnitFacts = {
 	readonly name: string;
 	readonly isExported: boolean;

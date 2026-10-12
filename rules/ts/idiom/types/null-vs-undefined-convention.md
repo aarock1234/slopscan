@@ -13,8 +13,10 @@ falsePositives:
   - 'optional properties declared with `?`, which are `undefined` by definition'
 guide:
   - ts.absence
-jev:
-  threshold: 0.49
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.49
+    openrouter/cloudflare/clef: 0.44
 ---
 
 ## Why

@@ -7,8 +7,10 @@ falsePositives:
     returning error or a standard interface such as io.Reader where the concrete
     type is an implementation detail
   - a parameter that needs unexported fields of the concrete type
-jev:
-  threshold: 0.45
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.45
+    openrouter/cloudflare/clef: 0.52
 guide:
   - go.consumer-interfaces
 ---

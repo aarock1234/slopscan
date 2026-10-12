@@ -9,8 +9,10 @@ falsePositives:
     such as a derived deadline or a converted unit
 guide:
   - go.optional-fields
-jev:
-  threshold: 0.39
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.39
+    openrouter/cloudflare/clef: 0.45
 ---
 
 ## Why

@@ -13,7 +13,7 @@ import type { Change } from './change.js';
 import type { Finding } from './finding.js';
 import { Lang, detectLang } from './lang.js';
 import { Detect } from './rule.js';
-import type { JudgeRule, Rule } from './rule.js';
+import type { Rule } from './rule.js';
 import { mapConcurrent } from './shared/concurrency.js';
 import { trackedFiles } from './shared/git.js';
 import { loadPrompt } from './shared/prompts.js';
@@ -60,8 +60,6 @@ export type VerifierOptions = {
 	readonly config: VerifyConfig;
 	readonly repo: string;
 	readonly cacheDir: string;
-	// jev findings at or above this confidence pass without a check
-	readonly confidenceFloor: number;
 };
 
 const VerdictKind = {
@@ -119,7 +117,8 @@ const CONTEXT_AFTER = 60;
 const CONCURRENT_CHECKS = 4;
 const PROMPT_NAME = 'verify';
 
-// the LLM judge as a bounded agent over Jev's less confident findings: two tools, a step cap, one structured verdict.
+// the LLM judge as a bounded agent over the findings a fast first pass cannot settle alone: every decision-model
+// finding, and every match of an ast rule that asks to be verified. two tools, a step cap, one structured verdict.
 // confirmed findings keep their line but take the verifier's quote; rejected and uncertain ones are dropped.
 // the candidate comes from the change's head-side source; the tools read the working tree, as confirm does.
 export function createVerifier(options: VerifierOptions): Verifier {
@@ -137,9 +136,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 		changes: readonly Change[],
 		rules: readonly Rule[]
 	): Promise<Verified> {
-		const rulesById = new Map(
-			rules.filter((rule): rule is JudgeRule => rule.detect === Detect.JUDGE).map(rule => [rule.id, rule])
-		);
+		const rulesById = new Map(rules.map(rule => [rule.id, rule]));
 		const sources = new Map(changes.map(change => [change.path, change.source]));
 		const [trackedPaths] = await Promise.all([
 			trackedFiles(options.repo),
@@ -153,12 +150,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 				const rule = rulesById.get(finding.ruleId);
 				const source = sources.get(finding.path);
 
-				if (
-					finding.origin !== Origin.JEV ||
-					finding.confidence >= options.confidenceFloor ||
-					rule === undefined ||
-					source === undefined
-				) {
+				if (rule === undefined || source === undefined || !needsCheck(finding, rule)) {
 					return {
 						finding,
 						verdict: undefined,
@@ -212,12 +204,7 @@ export function createVerifier(options: VerifierOptions): Verifier {
 		};
 	}
 
-	async function check(
-		finding: Finding,
-		rule: JudgeRule,
-		source: string,
-		tracked: ReadonlySet<string>
-	): Promise<Verdict> {
+	async function check(finding: Finding, rule: Rule, source: string, tracked: ReadonlySet<string>): Promise<Verdict> {
 		const cachePath = join(options.cacheDir, `${cacheKey(options.modelId, finding, rule)}.json`);
 		const cached = await readCached(cachePath);
 
@@ -269,8 +256,25 @@ type Checked = {
 	verdict: Verdict | undefined;
 };
 
+// every decision finding, and the matches of an ast rule whose matcher over-approximates. checking confident decision
+// findings too costs a cent a repository and, on two labeled ones, dropped a wrong finding without losing a right one.
+function needsCheck(finding: Finding, rule: Rule): boolean {
+	switch (finding.origin) {
+		case Origin.DECISION:
+			return true;
+		case Origin.AST:
+			return rule.detect === Detect.AST && rule.verify;
+		case Origin.JUDGE:
+			return false;
+		default: {
+			const exhaustive: never = finding.origin;
+			throw new Error(`unhandled origin: ${String(exhaustive)}`);
+		}
+	}
+}
+
 // the same finding under the same rule text and model answers the same, so a run over an unchanged commit is free
-function cacheKey(modelId: string, finding: Finding, rule: JudgeRule): string {
+function cacheKey(modelId: string, finding: Finding, rule: Rule): string {
 	return createHash('sha256')
 		.update(`${modelId}\n${finding.path}:${finding.line}\n${finding.ruleId}\n${rule.why}\n${finding.quote}`)
 		.digest('hex');
@@ -331,7 +335,7 @@ function readAnswer(result: { readonly output: ModelVerdict }): ModelVerdict | u
 	}
 }
 
-function renderCandidate(finding: Finding, rule: JudgeRule, source: string): string {
+function renderCandidate(finding: Finding, rule: Rule, source: string): string {
 	const lines = source.split('\n');
 	const start = Math.max(1, finding.line - CONTEXT_BEFORE);
 	const end = Math.min(lines.length, finding.line + CONTEXT_AFTER);
@@ -341,7 +345,7 @@ function renderCandidate(finding: Finding, rule: JudgeRule, source: string): str
 		.join('\n');
 
 	return [
-		`Candidate: ${finding.path}:${finding.line}. The classifier's confidence was ${finding.confidence.toFixed(2)}.`,
+		`Candidate: ${finding.path}:${finding.line}. ${describeOrigin(finding)}`,
 		'',
 		`Rule ${rule.id}: ${rule.message}`,
 		rule.why,
@@ -357,6 +361,13 @@ function renderCandidate(finding: Finding, rule: JudgeRule, source: string): str
 		excerpt,
 		'```',
 	].join('\n');
+}
+
+// what produced the candidate, so the verifier knows what the first pass could not see
+function describeOrigin(finding: Finding): string {
+	return finding.origin === Origin.AST
+		? 'A syntax matcher flagged it; it sees the shape of the code, not types, signatures, or comments.'
+		: `The classifier's confidence was ${finding.confidence.toFixed(2)}.`;
 }
 
 // a missing entry and an entry in an older shape are both misses; the check runs again and overwrites it

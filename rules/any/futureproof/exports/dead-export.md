@@ -23,8 +23,6 @@ falsePositives:
   - >-
     types and constants that describe a wire format or database schema, which
     are referenced by name only in data
-jev:
-  threshold: 0.72
 guide:
   - ts.smallest-model
 ---

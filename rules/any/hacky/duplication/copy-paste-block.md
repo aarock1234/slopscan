@@ -14,8 +14,10 @@ falsePositives:
   - >-
     blocks that look alike today but belong to different domains and are
     expected to diverge, when the code says so
-jev:
-  threshold: 0.5
+decision:
+  thresholds:
+    typesafe/jev-latest: 0.5
+    openrouter/cloudflare/clef: 0.5
 guide:
   - go.function-boundaries
   - ts.readability-and-abstraction-decisions
